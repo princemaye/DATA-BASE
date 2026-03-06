@@ -58,7 +58,7 @@ const oce2 = '*'
 const pk = "`("
 const pk2 = ")`"
 const channel_url = "https://whatsapp.com/channel/0029Vakd0RY35fLr1MUiwO3O";
-const apilink = "https://b9c3af4f-e0a4-4974-a7f3-5dfe5eca1d0d-00-2x3mdie5gi2gf.janeway.replit.dev";
+const apilink = "https://darkyasiya-new-movie-api.vercel.app/";
 const apikey = '';
 
 const sublkBase = "https://sub.lk";
