@@ -56,7 +56,7 @@ const pk2 = ")`"
 const channel_url = "https://whatsapp.com/channel/0029VbAn";
 
 // --- NEW API BASE (replaces darkyasiya-new-movie-api) ---
-const apilink = "https://bot-mov.vercel.app";
+const apilink = "https://darkyasiya-new-movie-api.vercel.app";
 const apikey = '';
 
 const sublkBase = "https://sub.lk";
