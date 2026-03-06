@@ -93,26 +93,27 @@ let needCineApikey =
 📌 *How to Apply API_KEY*
 
 📝 *Step 01*  
-Register here 👉 https://manojapi.infinityapi.org/?ref=darkyasiyanew  
+Register here 👉 https://manojapi.infinityapi.org/?ref=princetech
 
 ✅ *Step 02*  
 Once you sign up, you will be given an API key.  
 Send the *.apply* command and reply with the number corresponding to your *CINESUBZ_API_KEY*.`;
 
-if(config.LANG === 'SI'){
+if(config.LANG === 'FR'){
    needCineApikey = 
-`🔑 *කරුණාකර CINESUBZ_API_KEY එක ලබා දෙන්න.*
+`🔑 *Veuillez fournir la clé CINESUBZ_API_KEY.*
 
-📌 *API_KEY එක අයදුම් කරන ආකාරය*
+📌 *Comment demander la clé API*
 
-📝 *පියවර 01*  
-මෙතනින් Register කරන්න 👉 https://manojapi.infinityapi.org/?ref=darkyasiyanew  
+📝 *Étape 01*  
+Inscrivez-vous ici 👉 https://manojapi.infinityapi.org/?ref=princetech
 
-✅ *පියවර 02*  
-ඔබ Register කළාම ඔබට API Key එකක් ලැබෙනවා.  
-එක *.apply* command එකෙන් යවන්න,  
-ඉන්පසු *CINESUBZ_API_KEY* එකට අදාල අංකය reply කරන්න.`;
+✅ *Étape 02*  
+Après votre inscription, vous recevrez une clé API.  
+Envoyez-la avec la commande *.apply*,  
+puis répondez avec le numéro correspondant à *CINESUBZ_API_KEY*.`;
 }
+
 // =================== F U N C T I O N =====================
 const { storenumrepdata } = require('../lib/numreply-db')
 function formatNumber(num) {
