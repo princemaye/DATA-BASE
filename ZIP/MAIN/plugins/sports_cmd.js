@@ -6,7 +6,7 @@ const { fetchJson, getContextInfo } = require("../lib/functions");
 const { toBold, toSmallCaps } = require("../lib/fonts");
 const { storenumrepdata } = require("../lib/numreply-db");
 
-const SPORTS_API_BASE = "https://Keithsite.top";
+const SPORTS_API_BASE = "https://apisKeith.top";
 const SPORTS_IMAGE = "https://i.ibb.co/gLRMhk9p/N0r-QVLHAY0.jpg";
 
 // ============================= L A N G U A G E =============================
