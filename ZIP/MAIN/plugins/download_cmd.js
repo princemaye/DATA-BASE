@@ -123,8 +123,7 @@ cmd({
 3.1  Audio
 3.2  Document
 3.3  Voice
-
-> ${type}: ${url}`;
+ `;
            
         const numrep = [];
         numrep.push(`1.1 ${prefix}tt_dl ${sd} SD VIDEO=${title}`);
@@ -545,7 +544,7 @@ cmd({
             `➠ *[2] Document Type*\n` +
             `2.1  SD Video\n` +
             `2.2  HD Video\n\n` +
-            `> URL: ${q}`;
+            `ok`;
 
         const numrep = [
             `1.1 ${prefix}fb_dl ${sd} SD VIDEO=${title}`,
