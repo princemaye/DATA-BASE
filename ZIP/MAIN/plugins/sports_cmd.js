@@ -1,7 +1,7 @@
 // ============================= SPORTS PLUGIN =============================
 const { cmd } = require("../command");
 const config = require("../config");
-const { fetchJson, getContextInfo } = require("../lib/functions");
+const { fetchJson } = require("../lib/functions");
 
 const { toBold, toSmallCaps } = require("../lib/fonts");
 const { storenumrepdata } = require("../lib/numreply-db");
@@ -139,9 +139,6 @@ cmd(
             await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: txt,
                 },
@@ -191,9 +188,6 @@ cmd(
             const sentMsg = await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: info,
                 },
@@ -286,11 +280,6 @@ cmd(
                 return conn.sendMessage(
                     from,
                     {
-                        contextInfo: getContextInfo(
-                            config.BOT_NAME !== "default"
-                                ? config.BOT_NAME
-                                : null,
-                        ),
                         image: { url: SPORTS_IMAGE },
                         caption: `╭━━━━━━━━━━━╮\n│ ${selected.emoji} ${toBold(selected.name)}\n╰━━━━━━━━━━━╯\n\n_No matches found._`,
                     },
@@ -323,9 +312,6 @@ cmd(
             await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: output,
                 },
@@ -388,14 +374,11 @@ cmd(
                 txt += `┗━━━━━━━━━┛\n\n`;
             });
 
-            txt += `🔗 ${toSmallCaps("More at:")} Keithsite.top/sports\n\n${config.FOOTER}`;
+            txt += `🔗 ${toSmallCaps("More at:")} apisKeith.top/sports\n\n${config.FOOTER}`;
 
             await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: txt,
                 },
@@ -443,9 +426,6 @@ cmd(
             const sentMsg = await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: info,
                 },
@@ -531,9 +511,6 @@ cmd(
             await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: output,
                 },
@@ -575,9 +552,6 @@ cmd(
             const sentMsg = await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: info,
                 },
@@ -658,9 +632,6 @@ cmd(
             await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: output,
                 },
@@ -702,9 +673,6 @@ cmd(
             const sentMsg = await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: info,
                 },
@@ -778,9 +746,6 @@ cmd(
             await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: output,
                 },
@@ -822,9 +787,6 @@ cmd(
             const sentMsg = await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: info,
                 },
@@ -898,9 +860,6 @@ cmd(
             await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: output,
                 },
@@ -949,9 +908,6 @@ ${config.FOOTER}`;
             await conn.sendMessage(
                 from,
                 {
-                    contextInfo: getContextInfo(
-                        config.BOT_NAME !== "default" ? config.BOT_NAME : null,
-                    ),
                     image: { url: SPORTS_IMAGE },
                     caption: menuText,
                 },

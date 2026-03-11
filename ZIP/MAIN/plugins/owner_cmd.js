@@ -21,7 +21,9 @@ const {getBuffer,
     getMyGroupDetails,
     formatMessage,
     platformAwareRestart,
-    uploadToCatbox, getContextInfo} = require("../lib/functions");
+    uploadToCatbox} = require("../lib/functions");
+const { image2url } = require('@dark-yasiya/imgbb.js');
+const fileType = require('file-type');
 
 const {
     saveAutoReply,
@@ -364,7 +366,7 @@ cmd(
 
             if (newWarningCount >= 3) {
                 await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `🚫 *Final Warning Exceeded!*\n@${targetNumber}, You have received 3 warnings and have been removed from the group.`,
+                    text: `🚫 *Final Warning Exceeded!*\n@${targetNumber}, You have received 3 warnings and have been removed from the group.`,
                     mentions: [targetUser],
                 });
                 await conn.groupParticipantsUpdate(
@@ -492,7 +494,7 @@ cmd(
             const quoted = m?.quoted;
             if (!quoted) {
                 const msg = await conn.sendMessage(from, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `*${await tr("Please reply to a message (text/sticker/audio/video/image) ❌", lang)}*`,
+                        text: `*${await tr("Please reply to a message (text/sticker/audio/video/image) ❌", lang)}*`,
                     },
                     { quoted: mek },
                 );
@@ -521,7 +523,7 @@ cmd(
 
             if (!text && !isMedia) {
                 const msg = await conn.sendMessage(from, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `*${await tr("Please reply to a text or media message ❌", lang)}*\n\n_Supported: Text, Sticker, Image, Video, Audio_`,
+                        text: `*${await tr("Please reply to a text or media message ❌", lang)}*\n\n_Supported: Text, Sticker, Image, Video, Audio_`,
                     },
                     { quoted: mek },
                 );
@@ -615,7 +617,7 @@ cmd(
             });
             info += `\n> ${config.FOOTER}`;
 
-            const sentMsg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: config.LOGO }, caption: info },
+            const sentMsg = await conn.sendMessage(from, { image: { url: config.LOGO }, caption: info },
                 { quoted: mek },
             );
             await storenumrepdata({
@@ -651,7 +653,7 @@ cmd(
                     : false;
 
             if (!text) {
-                const msg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `*Please reply to a text message ❌*` },
+                const msg = await conn.sendMessage(from, { text: `*Please reply to a text message ❌*` },
                     { quoted: mek },
                 );
                 await conn.sendMessage(from, {
@@ -721,7 +723,7 @@ cmd(
 
             info += `\n╰━━━━━━━━━━━━━━━━━⊷\n${config.FOOTER}`;
 
-            const sentMsg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: config.LOGO }, caption: info },
+            const sentMsg = await conn.sendMessage(from, { image: { url: config.LOGO }, caption: info },
                 { quoted: mek },
             );
 
@@ -938,7 +940,7 @@ cmd(
 
             info += `> ${config.FOOTER}`;
 
-            const sentMsg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: config.LOGO }, caption: info },
+            const sentMsg = await conn.sendMessage(from, { image: { url: config.LOGO }, caption: info },
                 { quoted: mek },
             );
 
@@ -983,7 +985,7 @@ cmd(
                     !user.endsWith("@lid"))
             ) {
                 const msg = await conn.sendMessage(from, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `*${await tr("Please specify a valid user. ❌", lang)}*`,
+                        text: `*${await tr("Please specify a valid user. ❌", lang)}*`,
                     },
                     { quoted: mek },
                 );
@@ -1033,7 +1035,7 @@ cmd(
 
             info += `\n> ${config.FOOTER}`;
 
-            const sentMsg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: config.LOGO }, caption: info },
+            const sentMsg = await conn.sendMessage(from, { image: { url: config.LOGO }, caption: info },
                 { quoted: mek },
             );
 
@@ -1143,7 +1145,13 @@ cmd(
             if (isQuotedImage) {
                 await reply(`*🖼️ Uploading image, please wait...*`);
                 const buffer = await quoted.download();
-                const url = await uploadToCatbox(buffer, 'botpic.jpg');
+                const type = await fileType.fromBuffer(buffer);
+                const ext = type?.ext || 'jpg';
+                const tmpPath = `./temp/botpic_${Date.now()}.${ext}`;
+                await fs.promises.writeFile(tmpPath, buffer);
+                const result = await image2url(tmpPath);
+                fs.unlinkSync(tmpPath);
+                const url = result?.result?.url;
                 if (!url || !isUrl(url)) {
                     return await reply(`*❌ Failed to upload image. Try again or use a URL instead.*`);
                 }
@@ -1154,7 +1162,7 @@ cmd(
                 config.CONTEXT_LOGO = url;
 
                 await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: url },
+                    image: { url: url },
                     caption: `*🖼️ Bot picture updated successfully ✔*\n\n${toSmallCaps("url")}: ${url}`,
                 }, { quoted: mek });
 
@@ -1194,7 +1202,7 @@ cmd(
             config.CONTEXT_LOGO = url;
 
             await conn.sendMessage(from, {
-                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: url },
+                image: { url: url },
                 caption: `*🖼️ Bot picture updated successfully ✔*\n\n${toSmallCaps("url")}: ${url}`,
             }, { quoted: mek });
 
@@ -1635,7 +1643,7 @@ cmd(
                     // It's a video
                     const caption = viewOnceContent.videoMessage?.caption || "";
                     await conn.sendMessage(ownerChatId, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), video: await m.quoted.download(),
+                        video: await m.quoted.download(),
                         caption:
                             `*🎬 View Once Video*\n\n` +
                             `*👤 From:* ${pushname}\n` +
@@ -1653,7 +1661,7 @@ cmd(
                     // It's an image
                     const caption = viewOnceContent.imageMessage?.caption || "";
                     await conn.sendMessage(ownerChatId, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: await m.quoted.download(),
+                        image: await m.quoted.download(),
                         caption:
                             `*🖼️ View Once Image*\n\n` +
                             `*👤 From:* ${pushname}\n` +
@@ -1667,7 +1675,7 @@ cmd(
                 } else if (viewOnceContent?.audioMessage) {
                     // It's an audio
                     await conn.sendMessage(ownerChatId, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), audio: await m.quoted.download(),
+                        audio: await m.quoted.download(),
                         mimetype:
                             viewOnceContent.audioMessage?.mimetype ||
                             "audio/mpeg",
@@ -1698,7 +1706,7 @@ cmd(
                     if (m.quoted?.videoMessage) {
                         const caption = m.quoted.videoMessage?.caption || "";
                         await conn.sendMessage(ownerChatId, {
-                            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), video: await m.quoted.download(),
+                            video: await m.quoted.download(),
                             caption:
                                 `*🎬 View Once Video*\n\n` +
                                 `*👤 From:* ${pushname}\n` +
@@ -1714,7 +1722,7 @@ cmd(
                     } else if (m.quoted?.imageMessage) {
                         const caption = m.quoted.imageMessage?.caption || "";
                         await conn.sendMessage(ownerChatId, {
-                            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: await m.quoted.download(),
+                            image: await m.quoted.download(),
                             caption:
                                 `*🖼️ View Once Image*\n\n` +
                                 `*👤 From:* ${pushname}\n` +
@@ -1817,7 +1825,7 @@ cmd(
                 if (viewOnceContent?.videoMessage) {
                     // It's a video
                     await conn.sendMessage(from, {
-                            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), video: await m.quoted.download(),
+                            video: await m.quoted.download(),
                             caption:
                                 viewOnceContent.videoMessage?.caption || "",
                             mimetype:
@@ -1829,7 +1837,7 @@ cmd(
                 } else if (viewOnceContent?.imageMessage) {
                     // It's an image
                     await conn.sendMessage(from, {
-                            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: await m.quoted.download(),
+                            image: await m.quoted.download(),
                             caption:
                                 viewOnceContent.imageMessage?.caption || "",
                         },
@@ -1838,7 +1846,7 @@ cmd(
                 } else if (viewOnceContent?.audioMessage) {
                     // It's an audio
                     await conn.sendMessage(from, {
-                            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), audio: await m.quoted.download(),
+                            audio: await m.quoted.download(),
                             mimetype:
                                 viewOnceContent.audioMessage?.mimetype ||
                                 "audio/mpeg",
@@ -1862,7 +1870,7 @@ cmd(
                     // Handle regular media marked as view once
                     if (m.quoted?.videoMessage) {
                         await conn.sendMessage(from, {
-                                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), video: await m.quoted.download(),
+                                video: await m.quoted.download(),
                                 caption: m.quoted.videoMessage?.caption || "",
                                 mimetype:
                                     m.quoted.videoMessage?.mimetype ||
@@ -1872,7 +1880,7 @@ cmd(
                         );
                     } else if (m.quoted?.imageMessage) {
                         await conn.sendMessage(from, {
-                                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: await m.quoted.download(),
+                                image: await m.quoted.download(),
                                 caption: m.quoted.imageMessage?.caption || "",
                             },
                             { quoted: mek },
@@ -1905,11 +1913,11 @@ cmd(
         alias: ["getdp", "pic"],
         desc: "Extract profile pic of mentioned user or number",
         category: "owner",
-        use: "ppurl @user / .ppurl 2376XXXXXXX",
+        use: "getpp @user / .getpp 2376XXXXXXX",
         react: "🖼️",
         filename: __filename,
     },
-    async (conn, mek, m, { reply, args, from, isOwners }) => {
+    async (conn, mek, m, { reply, args, from, isOwners, isGroup }) => {
         try {
             if (!isOwners) return await reply(ownerMg);
             let targetJid;
@@ -1926,27 +1934,91 @@ cmd(
                 return await reply(pfMention);
             }
 
-            const url = await conn
-                .profilePictureUrl(targetJid, "image")
-                .catch(() => null);
+            // Resolve LID to real phone JID
+            if (targetJid.endsWith("@lid")) {
+                let resolved = targetJid;
+                try {
+                    const jid = await conn.getJidFromLid(targetJid);
+                    if (jid) resolved = jid;
+                } catch {}
+
+                if (resolved === targetJid) {
+                    const senderPn =
+                        m.msg?.contextInfo?.senderPn ||
+                        mek?.message?.[Object.keys(mek.message || {})[0]]?.contextInfo?.senderPn;
+                    if (senderPn && senderPn.includes("@s.whatsapp.net")) resolved = senderPn;
+                }
+
+                if (resolved === targetJid && isGroup) {
+                    try {
+                        const groupMeta = await conn.groupMetadata(from);
+                        const participant = groupMeta.participants.find(p => p.id === targetJid || p.lid === targetJid);
+                        if (participant && (participant.pn || participant.jid)) {
+                            resolved = participant.pn || participant.jid;
+                        }
+                    } catch {}
+                }
+
+                targetJid = resolved;
+            }
+
+            const displayId = targetJid.replace(/@.*$/, "");
+
+            const url = await Promise.race([
+                conn.profilePictureUrl(targetJid, "image").catch(() => null),
+                new Promise(res => setTimeout(() => res(null), 8000))
+            ]);
 
             if (!url) return await reply(pfNotfound);
 
             const sent = await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url },
-                    caption: `🖼️ *Profile picture of:* \`${targetJid.split("@")[0]}\`\n\n${config.FOOTER}`,
+                    image: { url },
+                    caption: `🖼️ *Profile picture of:* @${displayId}\n\n${config.FOOTER}`,
+                    mentions: [targetJid],
                 },
                 { quoted: mek },
             );
 
-            await conn.sendMessage(from, {
-                react: {
-                    text: "🖼️",
-                    key: sent.key,
-                },
-            });
+            await conn.sendMessage(from, { react: { text: "🖼️", key: sent.key } });
         } catch (err) {
-            console.log("PPURL Error:", err);
+            console.log("GETPP Error:", err);
+            await reply(pfError);
+        }
+    },
+);
+
+cmd(
+    {
+        pattern: "getgcpp",
+        alias: ["getgrouppic", "gcpic", "grouppic"],
+        desc: "Get the current group's profile picture",
+        category: "group",
+        use: ".getgcpp",
+        react: "🖼️",
+        filename: __filename,
+    },
+    async (conn, mek, m, { reply, from, isOwners, isGroup }) => {
+        try {
+            if (!isOwners) return await reply(ownerMg);
+            if (!isGroup) return await reply("❌ This command can only be used in a group!");
+
+            const url = await Promise.race([
+                conn.profilePictureUrl(from, "image").catch(() => null),
+                new Promise(res => setTimeout(() => res(null), 8000))
+            ]);
+
+            if (!url) return await reply("❌ This group has no profile picture set.");
+
+            const sent = await conn.sendMessage(from, {
+                    image: { url },
+                    caption: `🖼️ *Group Profile Picture*\n\n${config.FOOTER}`,
+                },
+                { quoted: mek },
+            );
+
+            await conn.sendMessage(from, { react: { text: "🖼️", key: sent.key } });
+        } catch (err) {
+            console.log("GETGCPP Error:", err);
             await reply(pfError);
         }
     },
@@ -2076,7 +2148,7 @@ cmd(
             } catch {}
 
             await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: profilePictureUrl },
+                    image: { url: profilePictureUrl },
                     caption:
                         `*👤 User Profile Information*\n\n` +
                         `*• Name:* @${number}\n` +
@@ -2144,7 +2216,7 @@ Current Privacy Settings
                 .catch(() => "https://files.catbox.moe/y51vgu.jpg");
 
             await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: avatar },
+                    image: { url: avatar },
                     caption: privacyText,
                 },
                 { quoted: mek },
@@ -2413,12 +2485,12 @@ cmd(
             for (let jid of targets) {
                 if (isImage) {
                     await conn.sendMessage(jid, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: await m.quoted.download(),
+                        image: await m.quoted.download(),
                         caption: m.quoted.imageMessage?.caption || "",
                     });
                 } else if (isVideo) {
                     await conn.sendMessage(jid, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), video: await m.quoted.download(),
+                        video: await m.quoted.download(),
                         caption: m.quoted.videoMessage?.caption || "",
                     });
                 } else {
@@ -2467,7 +2539,7 @@ cmd(
                 return;
             }
 
-            const msg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: "🧹 Cleaning old files..." },
+            const msg = await conn.sendMessage(from, { text: "🧹 Cleaning old files..." },
                 { quoted: mek },
             );
 
@@ -2479,12 +2551,12 @@ cmd(
                 if (fs.existsSync(fullPath)) {
                     fs.rmSync(fullPath, { recursive: true, force: true });
                     await conn.sendMessage(from, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `✅ ${label} removed.`,
+                        text: `✅ ${label} removed.`,
                         edit: msg.key,
                     });
                 } else {
                     await conn.sendMessage(from, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `⚠️ ${label} not found.`,
+                        text: `⚠️ ${label} not found.`,
                         edit: msg.key,
                     });
                 }
@@ -2495,12 +2567,12 @@ cmd(
                 if (fs.existsSync(fullPath)) {
                     fs.unlinkSync(fullPath);
                     await conn.sendMessage(from, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `✅ ${label} removed.`,
+                        text: `✅ ${label} removed.`,
                         edit: msg.key,
                     });
                 } else {
                     await conn.sendMessage(from, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `⚠️ ${label} not found.`,
+                        text: `⚠️ ${label} not found.`,
                         edit: msg.key,
                     });
                 }
@@ -2517,13 +2589,13 @@ cmd(
             await sleep(1000);
 
             // 🔄 Restart
-            await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: restartMg, edit: msg.key });
+            await conn.sendMessage(from, { text: restartMg, edit: msg.key });
             await sleep(1000);
 
             platformAwareRestart();
         } catch (error) {
             console.error("❌ Update failed:", error);
-            await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: "❌ Update Failed! Check Logs." },
+            await conn.sendMessage(from, { text: "❌ Update Failed! Check Logs." },
                 { quoted: mek },
             );
         }
@@ -2578,7 +2650,7 @@ Example:
 `;
 
             const sentMsg = await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: msgText,
+                    text: msgText,
                 },
                 { quoted: mek },
             );
@@ -2629,7 +2701,7 @@ Example:
 ➠ After setting the message, use ${prefix}apply to apply changes.
 `;
             const sentMsg = await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: msgText,
+                    text: msgText,
                 },
                 { quoted: mek },
             );
@@ -2831,7 +2903,7 @@ cmd(
             const groupName = metadata?.subject || "Unknown Group";
 
             await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: ppUrl },
+                    image: { url: ppUrl },
                     caption: `📸 *${groupName}*\n\n_Group profile picture_`,
                 },
                 { quoted: mek },

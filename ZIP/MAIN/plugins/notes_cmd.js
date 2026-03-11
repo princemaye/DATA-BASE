@@ -2,7 +2,6 @@ const { cmd } = require("../command");
 const config = require('../config');
 const DBM = require("../lib/user-db");
 const dbData = require("../lib/config");
-const { getContextInfo } = require('../lib/functions');
 
 const ymd_db = new DBM(dbData.TOKEN, dbData.USER_NAME, dbData.REPO_NAME);
 const tableName = dbData.tableName;
@@ -80,7 +79,7 @@ cmd(
       await setUserNotes(sender, userNotes);
 
       await conn.sendMessage(from, {
-          contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `╭━━━━━━━━━━━━━━━╮
+          text: `╭━━━━━━━━━━━━━━━╮
 │ 📝 *NOTE SAVED*
 ├━━━━━━━━━━━━━━━┤
 │ 🔢 Note #${noteId}
@@ -131,7 +130,7 @@ cmd(
       const createdDate = new Date(note.createdAt).toLocaleDateString();
 
       await conn.sendMessage(from, {
-          contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `╭━━━━━━━━━━━━━━━╮
+          text: `╭━━━━━━━━━━━━━━━╮
 │ 📝 *NOTE #${note.id}*
 ├━━━━━━━━━━━━━━━┤
 │
@@ -177,7 +176,7 @@ cmd(
       });
 
       await conn.sendMessage(from, {
-          contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `╭━━━━━━━━━━━━━━━╮
+          text: `╭━━━━━━━━━━━━━━━╮
 │ 📝 *YOUR NOTES* (${userNotes.length})
 ├━━━━━━━━━━━━━━━┤
 ${notesList}├━━━━━━━━━━━━━━━┤
@@ -241,7 +240,7 @@ cmd(
       await setUserNotes(sender, userNotes);
 
       await conn.sendMessage(from, {
-          contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `╭━━━━━━━━━━━━━━━╮
+          text: `╭━━━━━━━━━━━━━━━╮
 │ ✏️ *NOTE UPDATED*
 ├━━━━━━━━━━━━━━━┤
 │ 🔢 Note #${noteNum}
@@ -295,7 +294,7 @@ cmd(
       await setUserNotes(sender, userNotes);
 
       await conn.sendMessage(from, {
-          contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `╭━━━━━━━━━━━━━━━╮
+          text: `╭━━━━━━━━━━━━━━━╮
 │ 🗑️ *NOTE DELETED*
 ├━━━━━━━━━━━━━━━┤
 │ 🔢 Note #${noteNum}
@@ -337,7 +336,7 @@ cmd(
       await setUserNotes(sender, []);
 
       await conn.sendMessage(from, {
-          contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `╭━━━━━━━━━━━━━━━╮
+          text: `╭━━━━━━━━━━━━━━━╮
 │ 🗑️ *ALL NOTES DELETED*
 ├━━━━━━━━━━━━━━━┤
 │
@@ -367,7 +366,7 @@ cmd(
     if (!isOwners) return reply(ownerOnlyMsg);
     
     await conn.sendMessage(from, {
-        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `╭━━━━━━━━━━━━━━━╮
+        text: `╭━━━━━━━━━━━━━━━╮
 │ 📝 *NOTES COMMANDS*
 │ ⚠️ Owner Only
 ╰━━━━━━━━━━━━━━━╯

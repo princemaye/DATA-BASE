@@ -14,7 +14,7 @@ const { image2url } = require('@dark-yasiya/imgbb.js');
 const fileType = require("file-type");
 const { getContentType } = require('prince-baileys');
 const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
-const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, getContextInfo} = require('../lib/functions');
+const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions');
 
 const { TempMail } = require("tempmail.lol");
 const tempmail = new TempMail();
@@ -119,7 +119,7 @@ cmd({
 
         try {
             // Call Flux API with arraybuffer response
-            const response = await axios.get(`https://Keithsite.top/ai/flux?q=${encodeURIComponent(prompt)}`, {
+            const response = await axios.get(`https://apisKeith.top/ai/flux?q=${encodeURIComponent(prompt)}`, {
                 responseType: "arraybuffer",
                 timeout: 45000 // 45 seconds timeout for image generation
             });
@@ -139,7 +139,7 @@ cmd({
 
             // Send the generated image directly from buffer
             await conn.sendMessage(from, {
-                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: imageBuffer,
+                image: imageBuffer,
                 caption: `🎨 *Flux AI Image Generation*\n\n📝 *Prompt:* ${prompt}\n\n${config.FOOTER || "✨ Generated with Flux AI"}`
             }, { quoted: mek });
 
@@ -152,7 +152,7 @@ cmd({
             // Try alternative API if first one fails
             try {
                 await conn.sendMessage(from, { 
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `🔄 *Trying alternative AI image generator...*`,
+                    text: `🔄 *Trying alternative AI image generator...*`,
                     edit: processingMsg.key 
                 });
 
@@ -165,7 +165,7 @@ cmd({
                 const altBuffer = Buffer.from(altResponse.data);
 
                 await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: altBuffer,
+                    image: altBuffer,
                     caption: `🎨 *AI Image Generation*\n\n📝 *Prompt:* ${prompt}\n\n${config.FOOTER || "✨ Generated with AI"}`
                 }, { quoted: mek });
 
@@ -177,7 +177,7 @@ cmd({
                 // Try one more API
                 try {
                     await conn.sendMessage(from, { 
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `🔄 *Trying third image generator...*`,
+                        text: `🔄 *Trying third image generator...*`,
                         edit: processingMsg.key 
                     });
 
@@ -190,7 +190,7 @@ cmd({
                     const thirdBuffer = Buffer.from(thirdResponse.data);
 
                     await conn.sendMessage(from, {
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: thirdBuffer,
+                        image: thirdBuffer,
                         caption: `🎨 *AI Image Generation*\n\n📝 *Prompt:* ${prompt}\n\n${config.FOOTER || "✨ Generated with AI"}`
                     }, { quoted: mek });
 
@@ -201,7 +201,7 @@ cmd({
                     
                     // All APIs failed
                     await conn.sendMessage(from, { 
-                        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `❌ *Failed to generate image*\n\nAll AI services are currently unavailable.\n\nPlease try:\n1. A different prompt\n2. Try again in a few minutes\n3. Check if the prompt is appropriate`,
+                        text: `❌ *Failed to generate image*\n\nAll AI services are currently unavailable.\n\nPlease try:\n1. A different prompt\n2. Try again in a few minutes\n3. Check if the prompt is appropriate`,
                         edit: processingMsg.key 
                     });
                     
@@ -331,7 +331,7 @@ cmd({
 
             // Send the edited image
             await conn.sendMessage(from, {
-                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: resultUrl },
+                image: { url: resultUrl },
                 caption: `🎨 *AI Image Edit*\n\n📝 *Prompt:* ${prompt}\n\n${config.FOOTER || "✨ Edited with AI"}`
             }, { quoted: mek });
 
@@ -343,7 +343,7 @@ cmd({
             
             // Update processing message with error
             await conn.sendMessage(from, { 
-                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `❌ *Image Edit Failed*\n\nError: ${processError.message || "Unknown error"}\n\nPlease try:\n1. A different image\n2. A simpler prompt\n3. Try again later`,
+                text: `❌ *Image Edit Failed*\n\nError: ${processError.message || "Unknown error"}\n\nPlease try:\n1. A different image\n2. A simpler prompt\n3. Try again later`,
                 edit: processingMsg.key 
             });
             
@@ -599,7 +599,7 @@ cmd({
         let buffer = Buffer.from(qrImage.split(",")[1], "base64");
 
         await conn.sendMessage(from, {  
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: buffer, 
+            image: buffer, 
             caption: `${qrCodeGenerated}` 
         }, { quoted: mek });
         
@@ -661,7 +661,7 @@ let whoisText =
 
 ${config.FOOTER}`;
 
-        const sentMsg = await conn.sendMessage(m.chat, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: whoisText }, { quoted: mek });
+        const sentMsg = await conn.sendMessage(m.chat, { text: whoisText }, { quoted: mek });
         await conn.sendMessage(m.chat, { react: { text: "✅", key: sentMsg.key } });
 
     } catch (error) {
@@ -711,7 +711,7 @@ cmd({
 
     messageText += `\n📥 *Reply with a number (1-${count}) to select a password.*`;
 
-    const sentMsg = await conn.sendMessage(m.chat, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: messageText }, { quoted: mek });
+    const sentMsg = await conn.sendMessage(m.chat, { text: messageText }, { quoted: mek });
 
     conn.ev.on("messages.upsert", async (messageUpdate) => {
         const mekInfo = messageUpdate?.messages[0];
@@ -724,7 +724,7 @@ cmd({
             let selectedIndex = parseInt(messageType.trim()) - 1;
 
             if (selectedIndex >= 0 && selectedIndex < count) {
-                await conn.sendMessage(m.chat, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `${passwordList[selectedIndex]}` }, { quoted: mekInfo });
+                await conn.sendMessage(m.chat, { text: `${passwordList[selectedIndex]}` }, { quoted: mekInfo });
             } else {
                 await reply(invalidSelectionMessage,);
             }
@@ -789,7 +789,7 @@ cmd({
 
 ${config.FOOTER}`;
 
-        await conn.sendMessage(m.chat, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: msg }, { quoted: mek });
+        await conn.sendMessage(m.chat, { text: msg }, { quoted: mek });
 
     } catch (error) {
         console.log(e);
@@ -833,7 +833,7 @@ async (conn, mek, m, { from, quoted, reply }) => {
                 await m.react("✅");
                 
                 await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `🔗 *Image Uploaded*\n\n✅ *Upload Successful!*\n\n🌍 *URL:*\n${imageUrl}\n\n> ${config.FOOTER || 'Prince MDX'}`
+                    text: `🔗 *Image Uploaded*\n\n✅ *Upload Successful!*\n\n🌍 *URL:*\n${imageUrl}\n\n> ${config.FOOTER || 'Prince MDX'}`
                 }, { quoted: mek });
 
                 fs.unlinkSync(filePath);
@@ -862,7 +862,7 @@ async(conn, mek, m, { body, args, reply, q, from }) => {
         if (!text) return reply("⚠️ Please provide text or mention someone.");
         
         const buffer = await textToSticker(text);
-        await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), sticker: buffer }, { quoted: mek });
+        await conn.sendMessage(from, { sticker: buffer }, { quoted: mek });
     } catch (e) {
         console.log(e);
         await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
@@ -903,7 +903,7 @@ async (conn, mek, m, { reply, quoted, q, from, pushname }) => {
 
             const stickerBuffer = await sticker.toBuffer();
 
-            await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), sticker: stickerBuffer }, { quoted: mek });
+            await conn.sendMessage(from, { sticker: stickerBuffer }, { quoted: mek });
                 
         } else {
             await reply("❌ Please reply to an image or sticker!");
@@ -950,7 +950,7 @@ cmd({
         }
 
         const apiUrl =
-            `https://Keithsite.top/ai/text2speech?q=${encodeURIComponent(text)}`;
+            `https://apisKeith.top/ai/text2speech?q=${encodeURIComponent(text)}`;
 
         const { data } = await axios.get(apiUrl, { timeout: 60000 });
         const result = data?.result;
@@ -960,7 +960,7 @@ cmd({
         }
 
         await conn.sendMessage(from, {
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), audio: { url: result.URL },
+            audio: { url: result.URL },
             mimetype: "audio/mpeg",
             ptt: false
         }, { quoted: mek });
@@ -998,7 +998,7 @@ async (conn, mek, m, { reply, quoted, from }) => {
             .toBuffer();
 
         // Send the converted image
-        await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: imageBuffer, caption: `Here is your converted image! 🖼️\n\n${config.FOOTER}` }, { quoted: mek });
+        await conn.sendMessage(from, { image: imageBuffer, caption: `Here is your converted image! 🖼️\n\n${config.FOOTER}` }, { quoted: mek });
 
     } catch (e) {
         console.log(e);
@@ -1069,7 +1069,7 @@ cmd({
             
             // Call Keith's removebg API (exact same endpoint)
             const response = await axios.get(
-                `https://Keithsite.top/ai/removebg?url=${encodeURIComponent(imageUrl)}`,
+                `https://apisKeith.top/ai/removebg?url=${encodeURIComponent(imageUrl)}`,
                 {
                     headers: {
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -1089,7 +1089,7 @@ cmd({
             
             // Send back the processed image (same as Keith)
             await conn.sendMessage(from, { 
-                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: cutoutUrl } 
+                image: { url: cutoutUrl } 
             }, { quoted: mek });
             
             // Success reaction
@@ -1153,7 +1153,7 @@ async (conn, mek, m, { from, quoted, reply, quotedText }) => {
 
         // Send processed image
         await conn.sendMessage(from, {
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: data.result
+            text: data.result
         }, { quoted: mek });
 
 
@@ -1216,9 +1216,9 @@ async (conn, mek, m, { reply, from }) => {
 
         await reply(`📧 Your TempMail address:\n${emailAddress}`);
 
-        const quotedMsg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: token }, { quoted: mek });
+        const quotedMsg = await conn.sendMessage(from, { text: token }, { quoted: mek });
 
-        await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `📝 Quoted message is your token.\nUse *.tempinbox ${token}* to check your inbox.` },
+        await conn.sendMessage(from, { text: `📝 Quoted message is your token.\nUse *.tempinbox ${token}* to check your inbox.` },
             { quoted: quotedMsg }
         );
 
@@ -1467,7 +1467,7 @@ cmd({
 
 Real data from API for testing purposes only`;
             await conn.sendMessage(mek.key.remoteJid, {
-                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: user.picture },
+                image: { url: user.picture },
                 caption: message
             });
         } else {
@@ -1664,7 +1664,7 @@ async (conn, mek, m, { from, args, q, quoted, reply }) => {
         const fileName = pdfName.endsWith(".pdf") ? pdfName : `${pdfName}.pdf`;
 
         await conn.sendMessage(from, {
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), document: Buffer.from(res.data),
+            document: Buffer.from(res.data),
             mimetype: "application/pdf",
             fileName: fileName,
             caption: `📄 *${fileName}*`

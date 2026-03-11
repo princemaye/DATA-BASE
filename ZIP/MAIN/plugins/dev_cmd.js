@@ -2,7 +2,6 @@ const { cmd, commands } = require("../command");
 const config = require('../config');
 const fs = require("fs");
 const path = require("path");
-const { getContextInfo } = require('../lib/functions');
 
 cmd(
   {
@@ -129,7 +128,7 @@ async function sendCodeInChunks(conn, from, mek, cmdName, code, filePath) {
 
   if (header.length + code.length + 20 <= maxLength) {
     await conn.sendMessage(from, {
-        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: header + "```javascript\n" + code + "\n```",
+        text: header + "```javascript\n" + code + "\n```",
       },
       { quoted: mek },
     );
@@ -140,14 +139,14 @@ async function sendCodeInChunks(conn, from, mek, cmdName, code, filePath) {
     }
 
     await conn.sendMessage(from, {
-        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: header + `📄 Sending in ${chunks.length} parts...`,
+        text: header + `📄 Sending in ${chunks.length} parts...`,
       },
       { quoted: mek },
     );
 
     for (let i = 0; i < chunks.length; i++) {
       await conn.sendMessage(from, {
-        contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `📄 *Part ${i + 1}/${chunks.length}*\n\n\`\`\`javascript\n${chunks[i]}\n\`\`\``,
+        text: `📄 *Part ${i + 1}/${chunks.length}*\n\n\`\`\`javascript\n${chunks[i]}\n\`\`\``,
       });
     }
   }

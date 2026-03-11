@@ -6,7 +6,6 @@ const qrcode = require("qrcode");
 const WEATHER_API_KEY = "2244e068bad8437c93efe32310cad85a";
 const { python } = require('compile-run');
 const math = require("mathjs");
-const { getContextInfo } = require('../lib/functions');
 
 // ============================= L A N G U A G E =============================
 var allLangs = require("../lib/language.json");
@@ -190,7 +189,7 @@ cmd({
                   `📡 *Coordinates:* ${data.lat}, ${data.lon}\n\n` +
                   `🔗 *Map:* https://www.google.com/maps?q=${data.lat},${data.lon}`;
 
-        await conn.sendMessage(m.chat, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: msg }, { quoted: mek });
+        await conn.sendMessage(m.chat, { text: msg }, { quoted: mek });
     } catch (error) {
         console.log(error);
         await reply(ipConfigErr);
@@ -239,7 +238,7 @@ cmd({
     try {
         const qr = await qrcode.toBuffer(link, { width: 300 });
         await conn.sendMessage(m.chat, {
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: qr,
+            image: qr,
             caption: qrCaption
         }, { quoted: m });
     } catch (e) {
@@ -267,17 +266,17 @@ cmd({
                 const firstLine = lines[0];
                 const rest = lines.slice(1).join('\n');
                 const prankMsg = `${firstLine}${spam}${rest}`;
-                await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: prankMsg }, { quoted: mek });
+                await conn.sendMessage(from, { text: prankMsg }, { quoted: mek });
             } else {
                 const words = quotedText.split(/\s+/);
                 if (words.length >= 2) {
                     const firstWord = words[0];
                     const rest = words.slice(1).join(` ${spam}`);
                     const prankMsg = `${firstWord}${spam}${rest}`;
-                    await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: prankMsg }, { quoted: mek });
+                    await conn.sendMessage(from, { text: prankMsg }, { quoted: mek });
                 } else {
                     const prankMsg = `${quotedText}${spam}ㅤ`;
-                    await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: prankMsg }, { quoted: mek });
+                    await conn.sendMessage(from, { text: prankMsg }, { quoted: mek });
                 }
             }
             return;
@@ -562,7 +561,7 @@ cmd({
         
         if (result.image) {
             await conn.sendMessage(from, {
-                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: result.image },
+                image: { url: result.image },
                 caption: lyricsText
             }, { quoted: mek });
         } else {

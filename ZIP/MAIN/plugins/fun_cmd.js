@@ -2,10 +2,14 @@
 const config = require('../config');
 const { cmd } = require('../command');
 const axios = require('axios');
+const sharp = require('sharp');
+const fs = require('fs');
+const path = require('path');
+const { downloadMediaMessage } = require('prince-baileys');
+const { generateTweetImage, formatDate, fmtCount } = require('../lib/tweet-generator');
 
 // ============================= L A N G U A G E =============================
 var allLangs = require("../lib/language.json");
-const { getContextInfo } = require('../lib/functions');
 var LANG = config.LANG === 'EN' ? 'EN' 
          : config.LANG === 'FR' ? 'FR' 
          : 'EN';
@@ -526,7 +530,7 @@ async (conn, mek, m, { from, reply }) => {
         }
         
         await conn.sendMessage(from, { 
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: imageUrl },
+            image: { url: imageUrl },
             caption: config.FOOTER || "🐱 Random Cat"
         }, { quoted: mek });
         
@@ -554,7 +558,7 @@ async (conn, mek, m, { from, reply }) => {
         }
         
         await conn.sendMessage(from, { 
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: imageUrl },
+            image: { url: imageUrl },
             caption: config.FOOTER || "🐶 Random Dog"
         }, { quoted: mek });
         
@@ -628,7 +632,7 @@ async (conn, mek, m, { from, reply }) => {
         ];
 
         for (const line of steps) {
-            await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: line }, { quoted: mek });
+            await conn.sendMessage(from, { text: line }, { quoted: mek });
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
     } catch (e) {
@@ -636,3 +640,101 @@ async (conn, mek, m, { from, reply }) => {
         reply(`❌ Error: ${e.message}`);
     }
 });
+
+// ============================= FAKE TWEET =============================
+
+function _ftRandN(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function _ftHandle(name) {
+    const h = name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\x20-\x7E]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, '')
+        .substring(0, 15);
+    return h || 'user' + _ftRandN(100, 9999);
+}
+
+cmd(
+    {
+        pattern: "ftweek",
+        alias: ["faketweet", "faketw"],
+        desc: "Generate a fake X (Twitter) tweet card matching zeoob.com's dark theme. Send with a photo to include it in the tweet.",
+        category: "fun",
+        use: ".ftweek <tweet text>",
+        react: "🐦",
+        filename: __filename,
+    },
+    async (conn, mek, m, { reply, from, sender, pushname, q }) => {
+        try {
+            if (!q) return await reply(
+                "❌ Please provide the tweet text!\n\n" +
+                "Example: *.ftweek Just launched my new project! 🚀*\n\n" +
+                "_Tip: Send with an image attached (or reply to an image) to add a photo to the tweet._"
+            );
+
+            await reply("🐦 _Generating fake tweet..._");
+
+            const name    = pushname || 'User';
+            const handle  = _ftHandle(name);
+            const date    = formatDate();
+            const reposts = fmtCount(_ftRandN(1000, 99000));
+            const likes   = fmtCount(_ftRandN(5000, 250000));
+
+            // ── Fetch profile picture ──────────────────────────────────────
+            let avatarBuffer = null;
+            try {
+                const ppUrl = await Promise.race([
+                    conn.profilePictureUrl(sender, 'image').catch(() => null),
+                    new Promise(r => setTimeout(() => r(null), 6000)),
+                ]);
+                if (ppUrl) {
+                    const ppRes = await axios.get(ppUrl, { responseType: 'arraybuffer', timeout: 8000 });
+                    avatarBuffer = Buffer.from(ppRes.data);
+                }
+            } catch {}
+
+            // ── Detect tweet photo (current message image OR quoted image) ─
+            let postImageBuffer = null;
+            try {
+                const curType = mek.message
+                    ? Object.keys(mek.message).find(k => k !== 'messageContextInfo' && k !== 'senderKeyDistributionMessage')
+                    : null;
+
+                if (curType === 'imageMessage') {
+                    // User sent ".ftweek text" as an image caption
+                    postImageBuffer = await downloadMediaMessage(mek, 'buffer', {});
+                } else if (m.quoted && m.quoted.type === 'imageMessage') {
+                    // User replied to an image with ".ftweek text"
+                    postImageBuffer = await m.quoted.download();
+                }
+            } catch {}
+
+            // ── Render ─────────────────────────────────────────────────────
+            const imgBuf = await generateTweetImage({
+                name,
+                handle,
+                avatarBuffer,
+                text            : q,
+                date,
+                reposts,
+                likes,
+                device          : 'Twitter for Android',
+                postImageBuffer,
+            });
+
+            await conn.sendMessage(from, {
+                image   : imgBuf,
+                caption : `🐦 *Fake Tweet Generated!*\n\n> _${q}_\n\n${config.FOOTER}`,
+                mentions: [sender],
+            }, { quoted: mek });
+
+        } catch (err) {
+            console.log('FTWEEK Error:', err);
+            await reply('❌ Failed to generate tweet. Please try again.');
+        }
+    },
+);

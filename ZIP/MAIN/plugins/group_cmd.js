@@ -1,7 +1,7 @@
 // ============================= R E Q U E S T =============================
 const config = require('../config');
 const { cmd, commands } = require('../command');
-const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, getContextInfo} = require('../lib/functions');
+const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions');
 const { downloadMediaMessage } = require('prince-baileys');
 
 const DBM = require("../lib/user-db");
@@ -127,7 +127,7 @@ END:VCARD
         await sleep(1500);
 
         await conn.sendMessage(from, {
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), document: fs.readFileSync(vcfPath),
+            document: fs.readFileSync(vcfPath),
             mimetype: "text/vcard",
             fileName: "prince_tech_contacts.vcf",
             caption: `
@@ -204,7 +204,7 @@ async (conn, mek, m, {
                             `${q}`;
 
             await conn.sendMessage(id, {
-                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: message,
+                text: message,
                 contextInfo: {
                     externalAdReply: {
                         showAdAttribution: true,
@@ -361,7 +361,7 @@ cmd({
 
         info += `\n> ${config.FOOTER}`;
 
-        const sentMsg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: config.LOGO }, caption: info },
+        const sentMsg = await conn.sendMessage(from, { image: { url: config.LOGO }, caption: info },
             { quoted: mek },
         );
 
@@ -459,7 +459,7 @@ if (!isAdmins) return reply(needAdmin);
 if (!isBotAdmins) return reply(giveMeAdmin);
         
 await conn.groupSettingUpdate(from, 'announcement')
- await conn.sendMessage(from , { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `*Group Chat closed by Admin ${pushname}* 🔇` }, { quoted: mek } )
+ await conn.sendMessage(from , { text: `*Group Chat closed by Admin ${pushname}* 🔇` }, { quoted: mek } )
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
 console.log(e)
@@ -485,7 +485,7 @@ if (!isAdmins) return reply(needAdmin);
 if (!isBotAdmins) return reply(giveMeAdmin);
         
 await conn.groupSettingUpdate(from, 'not_announcement')
- await conn.sendMessage(from , { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `*Group Chat Opened by Admin ${pushname}* 🔇` }, { quoted: mek } )
+ await conn.sendMessage(from , { text: `*Group Chat Opened by Admin ${pushname}* 🔇` }, { quoted: mek } )
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
 console.log(e)
@@ -511,7 +511,7 @@ if (!isAdmins) return reply(needAdmin);
 if (!isBotAdmins) return reply(giveMeAdmin);
         
 await conn.groupSettingUpdate(from, 'locked')
- await conn.sendMessage(from , { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `*Group settings Locked* 🔒` }, { quoted: mek } )
+ await conn.sendMessage(from , { text: `*Group settings Locked* 🔒` }, { quoted: mek } )
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
 console.log(e)
@@ -536,7 +536,7 @@ if (!isAdmins) return reply(needAdmin);
 if (!isBotAdmins) return reply(giveMeAdmin);
         
 await conn.groupSettingUpdate(from, 'unlocked')
- await conn.sendMessage(from , { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `*Group settings Unlocked* 🔓` }, { quoted: mek } )
+ await conn.sendMessage(from , { text: `*Group settings Unlocked* 🔓` }, { quoted: mek } )
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
 console.log(e)
@@ -561,7 +561,7 @@ if (!isGroup) return reply(groupOnly);
 if (!isOwners) return reply(needOwner);
 
         
- await conn.sendMessage(from , { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `*Good Bye All* 👋🏻` }, { quoted: mek } )
+ await conn.sendMessage(from , { text: `*Good Bye All* 👋🏻` }, { quoted: mek } )
  await conn.groupLeave(from) 
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
@@ -589,7 +589,7 @@ if (!isBotAdmins) return reply(giveMeAdmin);
         
 if (!q) return reply("*Please write the new Group Subject* 🖊️")
 await conn.groupUpdateSubject(from, q )
- await conn.sendMessage(from , { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `✔️ *Group name Updated*` }, { quoted: mek } )
+ await conn.sendMessage(from , { text: `✔️ *Group name Updated*` }, { quoted: mek } )
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
 console.log(e)
@@ -616,7 +616,7 @@ if (!isBotAdmins) return reply(giveMeAdmin);
         
 if (!q) return reply("*Please write the new Group Description* 🖊️")
 await conn.groupUpdateDescription(from, q )
- await conn.sendMessage(from , { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `✔️ *Group Description Updated*` }, { quoted: mek } )
+ await conn.sendMessage(from , { text: `✔️ *Group Description Updated*` }, { quoted: mek } )
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
 console.log(e)
@@ -642,7 +642,7 @@ if (!isOwners) return reply(needOwner)
 if (!q) return reply("*Please write the Group Link 🖇️*")
  let result = args[0].split('https://chat.whatsapp.com/')[1].split("?")[0];
  await conn.groupAcceptInvite(result)
-     await conn.sendMessage(from , { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `✔️ *Successfully Joined*`}, { quoted: mek } )
+     await conn.sendMessage(from , { text: `✔️ *Successfully Joined*`}, { quoted: mek } )
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
 console.log(e)
@@ -670,7 +670,7 @@ if (!isBotAdmins) return reply(giveMeAdmin);
         
 const code = await conn.groupInviteCode(from)
 
- await conn.sendMessage(from , { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `🖇️ *Group Link*\n\nhttps://chat.whatsapp.com/${code}`}, { quoted: mek } )
+ await conn.sendMessage(from , { text: `🖇️ *Group Link*\n\nhttps://chat.whatsapp.com/${code}`}, { quoted: mek } )
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
 console.log(e)
@@ -697,7 +697,7 @@ try{
         if (!isBotAdmins) return reply(giveMeAdmin);
         
 await conn.groupRevokeInvite(from)
- await conn.sendMessage(from , { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `*Group link Reseted* ⛔`}, { quoted: mek } )
+ await conn.sendMessage(from , { text: `*Group link Reseted* ⛔`}, { quoted: mek } )
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
 console.log(e)
@@ -738,7 +738,7 @@ async (conn, mek, m, { from, quoted, q, isGroup, isAdmins, isBotAdmins, isDev, p
 
         if (response && response[0].status === "200") {
             await conn.sendMessage(from, { 
-                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `@${users.split("@")[0]} ` + userRemovedFromGroup,
+                text: `@${users.split("@")[0]} ` + userRemovedFromGroup,
                 mentions: [users] 
             }, { quoted: mek });
         } else {
@@ -813,9 +813,9 @@ try{
                 if (!users) return reply(removeUserReplyError)
         
                 const groupAdmins = await getGroupAdmins(participants) 
-                if  ( groupAdmins.includes(users)) return await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text:`*@${users.split("@")[0]} Already an Admin* ❗`, mentions: [users] },{ quoted:mek })
+                if  ( groupAdmins.includes(users)) return await conn.sendMessage(from, { text:`*@${users.split("@")[0]} Already an Admin* ❗`, mentions: [users] },{ quoted:mek })
                 await conn.groupParticipantsUpdate(from, [users], "promote")
-                await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text:`*@${users.split("@")[0]} promoted as an Admin*  ✔️`, mentions: [users] },{ quoted:mek })
+                await conn.sendMessage(from, { text:`*@${users.split("@")[0]} promoted as an Admin*  ✔️`, mentions: [users] },{ quoted:mek })
         
         
 } catch (e) {
@@ -850,9 +850,9 @@ try{
         
                 if (!users) return reply(removeUserReplyError)
                 const groupAdmins = await getGroupAdmins(participants) 
-                if  (!groupAdmins.includes(users)) return await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text:`*@${users.split("@")[0]} Already not an Admin* ❗`, mentions: [users] },{ quoted:mek })
+                if  (!groupAdmins.includes(users)) return await conn.sendMessage(from, { text:`*@${users.split("@")[0]} Already not an Admin* ❗`, mentions: [users] },{ quoted:mek })
                 await conn.groupParticipantsUpdate(from, [users], "demote")
-                await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text:`*@${users.split("@")[0]} No longer an Admin*  ✔️`, mentions: [users] },{ quoted:mek })
+                await conn.sendMessage(from, { text:`*@${users.split("@")[0]} No longer an Admin*  ✔️`, mentions: [users] },{ quoted:mek })
         
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
@@ -872,7 +872,7 @@ cmd({
 },
 async (conn, mek, m, {
     from, isGroup, isAdmins, isDev,
-    participants, groupName, reply
+    participants, groupName, reply, q
 }) => {
 try {
    
@@ -887,8 +887,7 @@ try {
     }
 
 
-    let message = m.text?.split(" ").slice(1).join(" ")
-    if (!message) message = "Please give your attention 🚨"
+    let message = q?.trim() || "Please give your attention 🚨"
 
     let teks = `📢 *TAG ALL MEMBERS*\n`
     teks += `🏷️ *Group:* ${groupName}\n`
@@ -896,14 +895,15 @@ try {
     teks += `━━━━━━━━━━━━━━━\n`
 
     for (let mem of participants) {
-        teks += `👤 @${mem.id.split("@")[0]}\n`
+        const jid = mem.jid || mem.pn || mem.id;
+        teks += `👤 @${jid.split("@")[0]}\n`
     }
 
     teks += `━━━━━━━━━━━━━━━`
 
     await conn.sendMessage(from, {
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: teks,
-            mentions: participants.map(p => p.id)
+            text: teks,
+            mentions: participants.map(p => p.jid || p.pn || p.id)
         },
         { quoted: mek }
     )
@@ -949,7 +949,7 @@ async (conn, mek, m, { from, quoted, q, isGroup, isAdmins, isDev, participants, 
         }
 
         await conn.sendMessage(from, { 
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: messageText, 
+            text: messageText, 
             mentions: participants.map(a => a.id) 
         }, { quoted: mek });
 
@@ -1007,7 +1007,7 @@ if ( !isOwners ) return await reply(ownerMg)
 
         // Send message with mentions
         await conn.sendMessage(groupId, {
-          contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: messageText,
+          text: messageText,
           mentions: participantList.map(participant => participant.id)
         });
         await reply(`*Message sent to ${groupInfo.subject} (${groupId}) successfully!*`);
@@ -1058,7 +1058,7 @@ const gdata = `\n*${metadata.subject}*
 👤 *Group Creator* - ${metadata.owner}
 
 📃 *Group Description* - ${metadata.desc}\n\n`
-await conn.sendMessage(from, {contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image:{url: ppUrl },caption: gdata + config.FOOTER },{quoted:mek })
+await conn.sendMessage(from, {image:{url: ppUrl },caption: gdata + config.FOOTER },{quoted:mek })
 } catch (e) {
 await conn.sendMessage(from, { react: { text: '❌', key: mek.key } })
 console.log(e)
@@ -1119,7 +1119,7 @@ async (conn, m, mek, { from, q, isGroup, isAdmins, isBotAdmins, participants, gr
         numrep.push(`${prefix}kickall true`);
         numrep.push(`${prefix}kickall false`);
 
-        const sentMsg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: info }, { quoted: mek });
+        const sentMsg = await conn.sendMessage(from, { text: info }, { quoted: mek });
         const messageKey = sentMsg.key;
 
         const jsonmsg = {
@@ -1297,7 +1297,7 @@ async (conn, mek, m, { from, reply, isGroup }) => {
 
         await conn.sendMessage(from, { react: { text: "✅", key: mek.key } });
         await conn.sendMessage(from, {
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: message,
+            text: message,
             mentions: mentions
         }, { quoted: mek });
 

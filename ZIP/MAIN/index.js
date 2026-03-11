@@ -446,8 +446,8 @@ async function princeMd(userName = "Princemaye", repoName = "DATA-BASE"){
     const ymd_db = new DBM(dbData.TOKEN, dbData.USER_NAME, dbData.REPO_NAME);
     console.log(`🛰️ Baileys      : 🔌 Connecting to Latest Version...`)
     const { state, saveCreds } = await useMultiFileAuthState(sessionFolder);
-    // const { version } = await fetchLatestBaileysVersion();
-    const version = [2, 3000, 1029030078];
+    const { version } = await fetchLatestBaileysVersion();
+    // const version = [2, 3000, 1029030078];
     // const version = [2, 3000, 1015901];
   //const warning_db = new WarningDB(dbData.TOKEN, dbData.USER_NAME, dbData.REPO_NAME, "warnings.json");
            let warning_db;
@@ -1740,8 +1740,7 @@ conn.ev.on("group-participants.update", welcomeHandler);
                 try {
 
                     var text = teks;
-                    const ctxInfo = getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : 'PRINCE-MDX');
-                    const replyMsg = await conn.sendMessage(from, { text, contextInfo: ctxInfo }, { quoted: mek });
+                    const replyMsg = await conn.sendMessage(from, { text }, { quoted: mek });
 
                     if (emoji && replyMsg?.key) {
                         if (!isReact) return;

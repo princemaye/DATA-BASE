@@ -123,7 +123,8 @@ cmd({
 3.1  Audio
 3.2  Document
 3.3  Voice
- `;
+
+> ${type}: ${url}`;
            
         const numrep = [];
         numrep.push(`1.1 ${prefix}tt_dl ${sd} SD VIDEO=${title}`);
@@ -502,6 +503,7 @@ cmd({
 
 //============================ FACEBOOK ============================
 
+
 cmd({
     pattern: "fb",
     alias: ["fbdl", "facebook"],
@@ -535,45 +537,7 @@ cmd({
             `┣ 🎵 *Title:* ${title}\n` +
             `┗━━━━━━━━━━━━━━━━━┛\n`;
 
-        // ================= NUM-REPLY MODE =================
-        info +=
-            `\n${numreplyMg}\n\n` +
-            `➠ *[1] Video Type*\n` +
-            `1.1  SD Video\n` +
-            `1.2  HD Video\n` +
-            `➠ *[2] Document Type*\n` +
-            `2.1  SD Video\n` +
-            `2.2  HD Video\n\n` +
-            `ok`;
-
-        const numrep = [
-            `1.1 ${prefix}fb_dl ${sd} SD VIDEO=${title}`,
-            `1.2 ${prefix}fb_dl ${hd} HD VIDEO=${title}`,
-            `2.1 ${prefix}fb_dl ${sd} SD DOC=${title}`,
-            `2.2 ${prefix}fb_dl ${hd} HD DOC=${title}`
-        ];
-
-        const sentMsg = await conn.sendMessage(from, {
-            image: { url: image },
-            caption: info,
-            contextInfo: {
-                externalAdReply: {
-                    title: `${botName || "PRINCE-𝖬𝖣X"} 𝖥𝖡 𝖣𝖮𝖶𝖭𝖫𝖮𝖠𝖣𝖤𝖱`,
-                    body: config.BODY || "",
-                    thumbnailUrl: config.CONTEXT_LOGO || config.LOGO,
-                    mediaType: 1,
-                    sourceUrl: q
-                }
-            }
-        }, { quoted: mek });
-
-        await conn.sendMessage(from, { react: { text: '🎥', key: sentMsg.key } });
-
-        await storenumrepdata({
-            key: sentMsg.key,
-            numrep,
-            method: "decimal"
-        });
+        // ================= BUTTON MODE =================
 
     } catch (e) {
         console.log(e);
@@ -600,16 +564,16 @@ cmd({
         const title = q.split("=")[1] || '';
 
         if(type === "video"){
-        const msg = await conn.sendMessage(from, { text: `📥 Downloading ${quality} Video...` }, { quoted: mek });
-        await conn.sendMessage(from, { video: { url }, fileName: `${title}.mp4`, caption: `🎥 *Here is your FB Video!*\n\n> ${config.FOOTER}` }, { quoted: mek });
+        const msg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `📥 Downloading ${quality} Video...` }, { quoted: mek });
+        await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), video: { url }, fileName: `${title}.mp4`, caption: `🎥 *Here is your FB Video!*\n\n> ${config.FOOTER}` }, { quoted: mek });
         await m.react("✅");
-        await conn.sendMessage(from, { text : mediaMg , edit : msg.key })
+        await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: mediaMg , edit : msg.key })
             
         } else {
-        const msg = await conn.sendMessage(from, { text: `📥 Downloading ${quality} Video...` }, { quoted: mek });
-        await conn.sendMessage(from, { document: { url }, fileName: `${title}.mp4`, mimetype: "video/mp4", caption: `🎥 *Here is your FB Video!*\n\n> ${config.FOOTER}` }, { quoted: mek });
+        const msg = await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: `📥 Downloading ${quality} Video...` }, { quoted: mek });
+        await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), document: { url }, fileName: `${title}.mp4`, mimetype: "video/mp4", caption: `🎥 *Here is your FB Video!*\n\n> ${config.FOOTER}` }, { quoted: mek });
         await m.react("✅");
-        await conn.sendMessage(from, { text : mediaMg , edit : msg.key })
+        await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: mediaMg , edit : msg.key })
             
         }
         
@@ -1433,7 +1397,7 @@ cmd({
             return await reply("❌ Please provide a valid Instagram video URL.");
         }
 
-        const apiUrl = `https://Keithsite.top/download/instadl?url=${encodeURIComponent(q)}`;
+        const apiUrl = `https://apisKeith.top/download/instadl?url=${encodeURIComponent(q)}`;
         const response = await fetch(apiUrl, { method: "GET" });
         const data = await response.json();
 

@@ -12,7 +12,7 @@ const OMDB_API_KEY = "da3d5959";
 const TMDB_API_KEY = "91c9bde7f4f9487b7b4f75d6c6dfc84b"; 
 const util = require('util')
 const { storenumrepdata } = require('../lib/numreply-db');
-const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, getContextInfo} = require('../lib/functions');
+const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions');
 const { Sticker, StickerTypes } = require("wa-sticker-formatter");
 const botName = config.BOT_NAME && config.BOT_NAME !== "default" ? config.BOT_NAME : null;
 
@@ -124,7 +124,7 @@ info += `➠ License        : ${packageData.license || latestVersionData.license
 
             // Send with NPM logo
             await conn.sendMessage(from, {
-                contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: "https://raw.githubusercontent.com/npm/logos/master/npm%20logo/npm-logo-red.png" },
+                image: { url: "https://raw.githubusercontent.com/npm/logos/master/npm%20logo/npm-logo-red.png" },
                 caption: info
             }, { quoted: mek });
 
@@ -265,7 +265,7 @@ ${config.FOOTER}`;
             // Send user details with profile picture
             if (user.avatar_url) {
                 await conn.sendMessage(from, {
-                    contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: user.avatar_url  },
+                    image: { url: user.avatar_url  },
                     caption: userInfo
                 }, { quoted: mek });
             } else {
@@ -445,7 +445,7 @@ cmd({
         ${footer}`;
 
         await conn.sendMessage(m.chat, {
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: details.Poster.replace(/_SX300/, "_SX0") },
+            image: { url: details.Poster.replace(/_SX300/, "_SX0") },
             caption: omdbInfo
         }, { quoted: mek });
 
@@ -527,7 +527,7 @@ cmd({
         ${footer}`;
 
         await conn.sendMessage(m.chat, {
-            contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), image: { url: `https://image.tmdb.org/t/p/original${details.poster_path}` },
+            image: { url: `https://image.tmdb.org/t/p/original${details.poster_path}` },
             caption: msg
         }, { quoted: mek });
 
@@ -608,7 +608,7 @@ cmd({
              `> ${config.FOOTER}`;
 
 
-        await conn.sendMessage(from, { contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null), text: info }, { quoted: mek });
+        await conn.sendMessage(from, { text: info }, { quoted: mek });
 
     } catch (err) {
         console.error(err);
