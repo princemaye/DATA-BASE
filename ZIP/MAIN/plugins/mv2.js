@@ -27,8 +27,6 @@ const { inputMovie, getMovie, resetMovie } = require('../lib/movie_db');
 const { storenumrepdata } = require('../lib/numreply-db');
 const dbData = require('../lib/config');
 
-const { buttonDesc, buttonTitle } = require('../lib/config');
-
 // ─── API ────────────────────────────────────────────────────────────────────
 const SILENT_API = 'https://darkvibe314-silent-movies-api.hf.space';
 
@@ -91,8 +89,6 @@ async (conn, mek, m, { from, prefix, q, isDev, isMe, isOwners, reply }) => {
 
         let movieList = '';
         let numrep    = [];
-        let buttons   = [];
-        let mi = 0, ti = 0;
 
         for (const item of results) {
             const isTV    = item.subjectType === 2;
@@ -103,14 +99,6 @@ async (conn, mek, m, { from, prefix, q, isDev, isMe, isOwners, reply }) => {
 
             movieList += `*${formatNumber(idx)} ||* ${icon} ${typeTag} ${item.title} (${(item.releaseDate || '').slice(0,4)})\n`;
             numrep.push(`${prefix}smovie_go ${packed}`);
-
-            if (config.MESSAGE_TYPE?.toLowerCase() === 'button') {
-                buttons.push({
-                    title: `${icon} ${item.title}`,
-                    description: `${typeTag} • ${(item.releaseDate || '').slice(0,4)}`,
-                    id: `${prefix}smovie_go ${packed}`
-                });
-            }
         }
 
         const caption =
@@ -122,32 +110,12 @@ async (conn, mek, m, { from, prefix, q, isDev, isMe, isOwners, reply }) => {
             `╰─────────────────╯\n\n` +
             `${movieList}`;
 
-        if (config.MESSAGE_TYPE?.toLowerCase() === 'button' && buttons.length) {
-            const listData = {
-                title: buttonTitle,
-                sections: [{ title: 'Search Results', rows: buttons }]
-            };
-            await conn.sendMessage(from, {
-                image: { url: config.LOGO },
-                caption,
-                footer: config.FOOTER,
-                buttons: [{
-                    buttonId: 'action',
-                    type: 4,
-                    buttonText: { displayText: '🔽 Select Option' },
-                    nativeFlowInfo: { name: 'single_select', paramsJson: JSON.stringify(listData) }
-                }],
-                headerType: 1,
-                viewOnce: true,
-            }, { quoted: mek });
-        } else {
-            const mass = await conn.sendMessage(from, {
-                image: { url: config.LOGO },
-                caption: `${caption}\n${config.FOOTER}`,
-            }, { quoted: mek });
+        const mass = await conn.sendMessage(from, {
+            image: { url: config.LOGO },
+            caption: `${caption}\n${config.FOOTER}`,
+        }, { quoted: mek });
 
-            await storenumrepdata({ key: mass.key, numrep, method: 'nondecimal' });
-        }
+        await storenumrepdata({ key: mass.key, numrep, method: 'nondecimal' });
 
     } catch (e) {
         console.error(e);
@@ -201,7 +169,6 @@ async (conn, mek, m, { from, prefix, q, isDev, isMe, isOwners, reply }) => {
             `  ▫ 🆎 Subtitles  : ${subtitles}\n\n`;
 
         let numrep = [];
-        let buttons = [];
 
         if (!isTV) {
             // ── MOVIE: single download option ─────────────────────────────
@@ -210,13 +177,8 @@ async (conn, mek, m, { from, prefix, q, isDev, isMe, isOwners, reply }) => {
             cot += `  *01 ||* ⬇️ Download Movie\n`;
             numrep.push(`${prefix}smovie_dl ${dlPacked}`);
 
-            if (config.MESSAGE_TYPE?.toLowerCase() === 'button') {
-                buttons.push({ title: '⬇️ Download Movie', description: 'Fetch & send the MP4 file', id: `${prefix}smovie_dl ${dlPacked}` });
-            }
-
         } else {
             // ── TV SERIES: season × episode numreply grid ─────────────────
-            // Generate S1–S5, E1–E10 as decimal-method numreply
             const MAX_SEASONS  = 5;
             const MAX_EPISODES = 15;
 
@@ -228,13 +190,6 @@ async (conn, mek, m, { from, prefix, q, isDev, isMe, isOwners, reply }) => {
                 for (let e = 1; e <= MAX_EPISODES; e++) {
                     cot += `${s}.${e} || S${String(s).padStart(2,'0')}E${String(e).padStart(2,'0')}\n`;
                     numrep.push(`${s}.${e} ${prefix}smovie_dl ${subjectId}🎈${title}🎈${cover}🎈${s}🎈${e}`);
-                    if (config.MESSAGE_TYPE?.toLowerCase() === 'button') {
-                        buttons.push({
-                            title: `S${String(s).padStart(2,'0')}E${String(e).padStart(2,'0')}`,
-                            description: `Season ${s} Episode ${e}`,
-                            id: `${prefix}smovie_dl ${subjectId}🎈${title}🎈${cover}🎈${s}🎈${e}`
-                        });
-                    }
                 }
                 cot += '\n';
             }
@@ -245,36 +200,16 @@ async (conn, mek, m, { from, prefix, q, isDev, isMe, isOwners, reply }) => {
         const coverBuf = await safeImageBuffer(cover);
         const coverMedia = coverBuf ? { image: coverBuf } : { image: { url: config.LOGO } };
 
-        if (config.MESSAGE_TYPE?.toLowerCase() === 'button' && !isTV && buttons.length) {
-            const listData = {
-                title: buttonTitle,
-                sections: [{ title: 'Download', rows: buttons }]
-            };
-            await conn.sendMessage(from, {
-                ...coverMedia,
-                caption: cot,
-                footer: config.FOOTER,
-                buttons: [{
-                    buttonId: 'action',
-                    type: 4,
-                    buttonText: { displayText: '🔽 Select Option' },
-                    nativeFlowInfo: { name: 'single_select', paramsJson: JSON.stringify(listData) }
-                }],
-                headerType: 1,
-                viewOnce: true,
-            }, { quoted: mek });
-        } else {
-            const mass = await conn.sendMessage(from, {
-                ...coverMedia,
-                caption: `${cot}\n${config.FOOTER}`,
-            }, { quoted: mek });
+        const mass = await conn.sendMessage(from, {
+            ...coverMedia,
+            caption: `${cot}\n${config.FOOTER}`,
+        }, { quoted: mek });
 
-            await storenumrepdata({
-                key: mass.key,
-                numrep,
-                method: isTV ? 'decimal' : 'nondecimal',
-            });
-        }
+        await storenumrepdata({
+            key: mass.key,
+            numrep,
+            method: isTV ? 'decimal' : 'nondecimal',
+        });
 
     } catch (e) {
         console.error(e);
