@@ -62,8 +62,8 @@ function formatDuration(seconds) {
 //  smovie  —  Search movies & TV series
 // ─────────────────────────────────────────────────────────────────────────────
 cmd({
-    pattern: 'smovie',
-    alias: ['smv', 'stv', 'silentmovie'],
+    pattern: 'movie',
+    alias: ['smv', 'stv', 'silentmovie','mv','smovie'],
     react: '🎬',
     desc: 'Search & download movies/series (English)',
     category: 'download',
@@ -179,8 +179,8 @@ async (conn, mek, m, { from, prefix, q, isDev, isMe, isOwners, reply }) => {
 
         } else {
             // ── TV SERIES: season × episode numreply grid ─────────────────
-            const MAX_SEASONS  = 5;
-            const MAX_EPISODES = 15;
+            const MAX_SEASONS  = 10;
+            const MAX_EPISODES = 25;
 
             cot += `▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃\n`;
             cot += `*Reply with Season.Episode (e.g. 1.3 = S01E03)*\n\n`;
