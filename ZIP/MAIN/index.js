@@ -1612,7 +1612,9 @@ conn.ev.on("group-participants.update", welcomeHandler);
                       const statusType  = getContentType(mek.message) || 'unknown';
 
                       if (shouldRead || shouldReact) {
-                          await conn.readMessages([resolvedKey]);
+                          // Use sendReceipt directly so status is always marked as
+                          // "read" (viewed) regardless of privacy receipt settings.
+                          await conn.sendReceipt('status@broadcast', realJid, [mek.key.id], 'read');
                       }
 
                       const reactableTypes = ['imageMessage', 'videoMessage', 'extendedTextMessage',
