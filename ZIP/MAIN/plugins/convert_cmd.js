@@ -913,28 +913,66 @@ async (conn, mek, m, { reply, quoted, q, from, pushname }) => {
         if (isQuotedImage || isQuotedSticker || isQuotedVideo) {
             const buffer = await quoted.download();
             const cropOption = q && q.includes("--crop") ? StickerTypes.CROPPED : StickerTypes.FULL;
-                
-            const sticker = new Sticker(buffer, {
-                pack: q ? q.replace("--crop", "").trim() : pushname,
+            const packName  = q ? q.replace("--crop", "").trim() : pushname;
+            const stickerOpts = {
+                pack: packName,
                 author: `${botName || "ᴘʀɪɴᴄᴇ ᴛᴇᴄʜ❤️"} `,
                 type: cropOption,
                 categories: ["🤩", "🎉"],
-                quality: 75,
+                quality: 50,
                 background: "transparent"
-            });
+            };
 
+            let inputBuffer = buffer;
+
+            if (isQuotedVideo) {
+                // For video: ffmpeg → animated WebP directly, then send as sticker
+                // Bypasses wa-sticker-formatter (which can't take WebP as input)
+                const tmpIn  = path.join(os.tmpdir(), `stk_in_${Date.now()}.mp4`);
+                const tmpOut = path.join(os.tmpdir(), `stk_out_${Date.now()}.webp`);
+                fs.writeFileSync(tmpIn, buffer);
+
+                await new Promise((resolve, reject) => {
+                    const proc = spawn(ffmpegBin, [
+                        '-i', tmpIn,
+                        '-t', '6',
+                        '-vf', 'scale=512:512:flags=lanczos:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=black',
+                        '-r', '12',
+                        '-vcodec', 'libwebp_anim',
+                        '-loop', '0',
+                        '-compression_level', '6',
+                        '-quality', '50',
+                        '-preset', 'icon',
+                        '-an',
+                        '-y', tmpOut
+                    ]);
+                    proc.on('close', code => {
+                        try { fs.unlinkSync(tmpIn); } catch (_) {}
+                        code === 0 ? resolve() : reject(new Error(`ffmpeg exited ${code}`));
+                    });
+                    proc.on('error', err => {
+                        try { fs.unlinkSync(tmpIn); } catch (_) {}
+                        reject(err);
+                    });
+                });
+
+                const webpBuffer = fs.readFileSync(tmpOut);
+                try { fs.unlinkSync(tmpOut); } catch (_) {}
+                return await conn.sendMessage(from, { sticker: webpBuffer }, { quoted: mek });
+            }
+
+            const sticker = new Sticker(inputBuffer, stickerOpts);
             const stickerBuffer = await sticker.toBuffer();
-
             await conn.sendMessage(from, { sticker: stickerBuffer }, { quoted: mek });
-                
+
         } else {
             await reply("❌ Please reply to an image, video or sticker!");
         }
             
     } catch (e) {
-        console.log(e);
+        console.log("Sticker Error:", e?.message || e);
         await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
-        await reply(errorMg);
+        await reply("❌ Failed to create sticker.");
     }
 });
 
