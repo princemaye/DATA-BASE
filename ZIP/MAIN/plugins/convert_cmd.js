@@ -34,7 +34,7 @@ const sharp = require("sharp");
 const Obf = require("javascript-obfuscator");
 const { image2url } = require('@dark-yasiya/imgbb.js');
 const fileType = require("file-type");
-const { getContentType } = require('prince-baileys');
+const { getContentType, downloadContentFromMessage } = require('prince-baileys');
 const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
 const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions');
 
@@ -958,7 +958,10 @@ async (conn, mek, m, { reply, quoted, q, from, pushname }) => {
 
                 const webpBuffer = fs.readFileSync(tmpOut);
                 try { fs.unlinkSync(tmpOut); } catch (_) {}
-                return await conn.sendMessage(from, { sticker: webpBuffer }, { quoted: mek });
+                // Add pack/author metadata via wa-sticker-formatter
+                const vidSticker = new Sticker(webpBuffer, stickerOpts);
+                const vidStickerBuf = await vidSticker.toBuffer();
+                return await conn.sendMessage(from, { sticker: vidStickerBuf }, { quoted: mek });
             }
 
             const sticker = new Sticker(inputBuffer, stickerOpts);
@@ -976,6 +979,110 @@ async (conn, mek, m, { reply, quoted, q, from, pushname }) => {
     }
 });
 
+
+cmd({
+    pattern: "tgs",
+    alias: ["telesticker"],
+    react: "🎭",
+    desc: "Import a Telegram sticker set link and send all stickers to WhatsApp",
+    category: "sticker",
+    use: "tgs <t.me/addstickers/StickerSetName>",
+    filename: __filename
+}, async (conn, mek, m, { from, reply, q, pushname, isOwners, isDev }) => {
+    try {
+        if (!isOwners && !isDev) return reply("❌ Only owners can use this command.");
+        if (!q) return reply("📌 Provide a Telegram sticker set link.\nExample: .tgs https://t.me/addstickers/Animals");
+
+        if (!q.includes('/addstickers/')) {
+            return reply("❌ Please provide a valid Telegram sticker link.\nExample: https://t.me/addstickers/Animals\n\n_Sticker search is not available._");
+        }
+
+        const token = config.TG_BOT_TOKEN || "8107461315:AAHpymvXxCI56YwMdsBer8eehQlmWIPZP78";
+
+        const TG = `https://api.telegram.org/bot${token}`;
+        const setName = q.split('/addstickers/')[1].split(/[\s?]/)[0];
+
+        const setRes = await axios.get(`${TG}/getStickerSet?name=${encodeURIComponent(setName)}`, { timeout: 15000 });
+        const set = setRes.data?.result;
+        if (!set) return reply("❌ Could not find that sticker set.");
+
+        const staticStickers = set.stickers.filter(s => !s.is_animated && !s.is_video);
+        if (!staticStickers.length) return reply("❌ This set has no static stickers (animated/video stickers are not supported).");
+
+        const packName = set.title || pushname || "TelegramPack";
+        await reply(`📦 *${packName}*\n🔢 Sending ${staticStickers.length} stickers...`);
+
+        for (const item of staticStickers) {
+            try {
+                const fileRes = await axios.get(`${TG}/getFile?file_id=${item.file_id}`, { timeout: 10000 });
+                const filePath = fileRes.data?.result?.file_path;
+                if (!filePath) continue;
+
+                const fileUrl = `https://api.telegram.org/file/bot${token}/${filePath}`;
+                const bufRes  = await axios.get(fileUrl, { responseType: 'arraybuffer', timeout: 15000 });
+
+                const sticker = new Sticker(Buffer.from(bufRes.data), {
+                    pack: packName,
+                    author: `${botName || "ᴘʀɪɴᴄᴇ ᴛᴇᴄʜ❤️"}`,
+                    type: StickerTypes.FULL,
+                    quality: 60,
+                    background: "transparent"
+                });
+
+                const stickerBuf = await sticker.toBuffer();
+                await conn.sendMessage(from, { sticker: stickerBuf }, { quoted: mek });
+                await new Promise(r => setTimeout(r, 400));
+            } catch (_) {}
+        }
+
+        await reply(`✅ *${packName}* — ${staticStickers.length} sticker(s) sent!`);
+
+    } catch (e) {
+        console.log("TGS Error:", e?.message || e);
+        await reply("❌ Error importing sticker set.");
+    }
+});
+
+
+
+cmd({
+    pattern: "emomix",
+    alias: ["emojimix", "emix"],
+    react: "✨",
+    desc: "Mix two emojis into a custom sticker",
+    category: "sticker",
+    use: "emomix 😹+😂",
+    filename: __filename
+}, async (conn, mek, m, { from, reply, q, pushname }) => {
+    try {
+        if (!q) return reply("📌 Provide two emojis separated by +\nExample: .emomix 😹+😂");
+
+        const res = await axios.get(
+            `https://levanter.onrender.com/emix?q=${encodeURIComponent(q)}`,
+            { timeout: 15000 }
+        );
+
+        if (!res.data?.status || !res.data?.result) {
+            return reply("❌ Failed to generate emoji mix. Try a different emoji combo.");
+        }
+
+        const sticker = new Sticker(res.data.result, {
+            pack: pushname || "EmojiMix",
+            author: `${botName || "ᴘʀɪɴᴄᴇ ᴛᴇᴄʜ❤️"}`,
+            type: StickerTypes.FULL,
+            categories: ["✨", "🔥"],
+            quality: 70,
+            background: "transparent"
+        });
+
+        const stickerBuf = await sticker.toBuffer();
+        await conn.sendMessage(from, { sticker: stickerBuf }, { quoted: mek });
+
+    } catch (e) {
+        console.log("EmoMix Error:", e?.message || e);
+        await reply("❌ Error generating emoji mix.");
+    }
+});
 
 
 cmd({
