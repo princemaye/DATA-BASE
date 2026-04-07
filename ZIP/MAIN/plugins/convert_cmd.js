@@ -11,6 +11,9 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 const os = require('os');
 const path = require('path');
+const ffmpegPath = require('ffmpeg-static');
+const fluentFfmpeg = require('fluent-ffmpeg');
+fluentFfmpeg.setFfmpegPath(ffmpegPath);
 const sharp = require("sharp");
 const Obf = require("javascript-obfuscator");
 const { image2url } = require('@dark-yasiya/imgbb.js');
@@ -1020,7 +1023,7 @@ async function toVideo(audioBuffer) {
 
         fs.writeFileSync(inFile, audioBuffer);
 
-        const proc = spawn('ffmpeg', [
+        const proc = spawn(ffmpegPath, [
             '-f', 'lavfi', '-i', 'color=c=black:size=1280x720:rate=25',
             '-i', inFile,
             '-shortest',
