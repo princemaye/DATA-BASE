@@ -8,9 +8,24 @@ const QRCode = require("qrcode");
 const whois = require("whois-json");
 const crypto = require("crypto");
 const fs = require('fs');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const os = require('os');
 const path = require('path');
+
+// Find ffmpeg at runtime — works on both Replit (nix PATH) and Heroku (buildpack)
+function findFfmpeg() {
+    // Heroku buildpack installs here
+    if (fs.existsSync('/app/vendor/ffmpeg/ffmpeg')) return '/app/vendor/ffmpeg/ffmpeg';
+    // Fall back to whatever is on PATH
+    try { return execSync('which ffmpeg').toString().trim(); } catch (_) {}
+    return 'ffmpeg';
+}
+const ffmpegBin = findFfmpeg();
+
+// Tell fluent-ffmpeg (used by wa-sticker-formatter) where ffmpeg lives
+const fluentFfmpeg = require('fluent-ffmpeg');
+fluentFfmpeg.setFfmpegPath(ffmpegBin);
+
 const sharp = require("sharp");
 const Obf = require("javascript-obfuscator");
 const { image2url } = require('@dark-yasiya/imgbb.js');
@@ -1020,7 +1035,7 @@ async function toVideo(audioBuffer) {
 
         fs.writeFileSync(inFile, audioBuffer);
 
-        const proc = spawn('ffmpeg', [
+        const proc = spawn(ffmpegBin, [
             '-f', 'lavfi', '-i', 'color=c=black:size=1280x720:rate=25',
             '-i', inFile,
             '-shortest',
