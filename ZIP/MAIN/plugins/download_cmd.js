@@ -519,42 +519,40 @@ cmd({
             return await reply(fbMg, "❓");
         }
 
-        // ✅ PUBLIC API (replaces fbdownload)
         const response = await fetchJson(
-            `https://apis.prexzyvilla.site/download/facebook?url=${q}`
+            `https://api.princetechn.com/api/download/facebookv2?apikey=prince&url=${encodeURIComponent(q)}`
         );
 
-        if (!response?.data?.sd && !response?.data?.hd) {
+        const result = response?.result;
+        if (!result?.links?.length) {
             return await reply(fbFailMg, "❌");
         }
 
-        const { title, thumbnail, sd, hd } = response.data;
-        const image = thumbnail;
+        const { title, thumbnail, duration, uploader } = result;
 
         let info =
             `\` ${botName || "PRINCE-𝖬𝖣X"} 𝖥𝖡 DOWNLO..\`\n\n` +
             `┏━━━━━━━━━━━━━━━━━┓\n` +
-            `┣ 🎵 *Title:* ${title}\n` +
+            `┣ 🎵 *Title:* ${title || 'Facebook Video'}\n` +
+            (uploader ? `┣ 👤 *By:* ${uploader}\n` : '') +
+            (duration  ? `┣ ⏱️ *Duration:* ${duration}\n` : '') +
             `┗━━━━━━━━━━━━━━━━━┛\n\n`;
 
         const numrep = [];
-        let optNum = 1;
+        const qualityIcons = { '1920p': '🎬', '1280p': '🎬', '960p': '📹', '640p': '📹' };
 
-        if (sd) {
-            info += `*${formatNumber(optNum)}.* 📹 Download SD Video\n`;
-            numrep.push(`${prefix}fb_dl ${sd} SD video=${title}`);
-            optNum++;
-        }
-        if (hd) {
-            info += `*${formatNumber(optNum)}.* 🎬 Download HD Video\n`;
-            numrep.push(`${prefix}fb_dl ${hd} HD video=${title}`);
+        for (const link of result.links) {
+            const icon = qualityIcons[link.quality] || '📹';
+            const optNum = numrep.length + 1;
+            info += `*${formatNumber(optNum)}.* ${icon} Download ${link.quality} Video\n`;
+            numrep.push(`${prefix}fb_dl ${link.url} ${link.quality} video=${title || 'FB_Video'}`);
         }
 
         info += `\n> ${config.FOOTER}`;
 
         const sentMsg = await conn.sendMessage(from, {
             contextInfo: getContextInfo(config.BOT_NAME !== 'default' ? config.BOT_NAME : null),
-            image: { url: image || config.LOGO },
+            image: { url: thumbnail || config.LOGO },
             caption: info,
         }, { quoted: mek });
 

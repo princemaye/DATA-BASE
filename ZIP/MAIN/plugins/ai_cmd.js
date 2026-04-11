@@ -797,3 +797,55 @@ async (conn, mek, m, { from, q, reply }) => {
         reply('❌ *An error occurred. Please try again.*');
     }
 });
+
+
+cmd({
+    pattern: 'tts',
+    alias: ['texttospeech', 'speak'],
+    react: '🔊',
+    desc: 'Convert text to speech audio',
+    category: 'ai',
+    use: 'tts <text>',
+    filename: __filename,
+}, async (conn, mek, m, { from, reply, q }) => {
+    try {
+        const voice = 'en_uk_female';
+
+        let text = (q || '').trim();
+
+        // If no text typed, try to use quoted message text
+        if (!text && m.quoted) {
+            const qt = m.quoted;
+            text = (typeof qt.msg === 'string')
+                ? qt.msg
+                : (qt.msg?.text || qt.msg?.caption || '');
+        }
+
+        if (!text) return reply(
+            `🔊 *Text To Speech*\n\n` +
+            `Usage: *.tts <text>*\n` +
+            `Or reply to any message with *.tts*`
+        );
+
+        await reply(`🔊 Generating speech...`);
+
+        const url = `${PRINCE_API_BASE}/tts?apikey=${PRINCE_API_KEY}&text=${encodeURIComponent(text)}&voice=${voice}`;
+
+        const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 20000 });
+
+        const audioBuffer = Buffer.from(res.data);
+
+        if (!audioBuffer.length) return reply('❌ Failed to generate audio. Please try again.');
+
+        await conn.sendMessage(from, {
+            audio: audioBuffer,
+            mimetype: 'audio/mpeg',
+            ptt: false,
+        }, { quoted: mek });
+
+    } catch (e) {
+        console.error('TTS error:', e.message);
+        reply('❌ *Failed to generate speech. Please try again.*');
+    }
+});
+

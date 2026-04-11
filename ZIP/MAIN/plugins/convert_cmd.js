@@ -1110,18 +1110,39 @@ cmd({
         const buf = await quoted.download();
         if (!buf) return reply("❌ Failed to download the audio.");
 
+        // Convert to MP3 so the transcribe API always gets a supported format
+        const mp3Buf = await new Promise((resolve) => {
+            const proc = spawn(ffmpegBin, [
+                '-i', 'pipe:0',
+                '-f', 'mp3',
+                '-acodec', 'libmp3lame',
+                '-ar', '16000',
+                '-ac', '1',
+                '-ab', '64k',
+                'pipe:1',
+            ]);
+            const chunks = [];
+            proc.stdout.on('data', c => chunks.push(c));
+            proc.stderr.on('data', () => {});
+            proc.stdout.on('end', () => resolve(chunks.length ? Buffer.concat(chunks) : null));
+            proc.on('error', () => resolve(null));
+            proc.stdin.write(buf);
+            proc.stdin.end();
+        });
+
+        const uploadBuf = mp3Buf || buf;
         const { uploadToCatbox } = require('../lib/functions');
-        const hostedUrl = await uploadToCatbox(buf, 'audio.mp3');
-        if (!hostedUrl) return reply("❌ Failed to upload audio for transcription.");
+        const hostedUrl = await uploadToCatbox(uploadBuf, 'audio.mp3');
+        if (!hostedUrl) return reply("❌ All upload services failed. Please try again later.");
 
         const apiUrl = `https://apiskeith.top/ai/transcribe?q=${encodeURIComponent(hostedUrl)}`;
-        const { data } = await axios.get(apiUrl, { timeout: 60000 });
+        const { data } = await axios.get(apiUrl, { timeout: 90000 });
 
         const text = data?.result?.text?.trim();
         const lang = data?.result?.language || 'Unknown';
-        const dur  = data?.result?.duration?.toFixed(1) || '?';
+        const dur  = data?.result?.duration ? Number(data.result.duration).toFixed(1) : '?';
 
-        if (!text) return reply("❌ Could not transcribe the audio.");
+        if (!text) return reply("❌ Could not transcribe the audio. The audio may be too short, silent, or in an unsupported language.");
 
         await reply(
 `🎙️ *Transcription*
