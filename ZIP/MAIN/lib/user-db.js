@@ -310,6 +310,7 @@ config.TWITTER_DETAILS_MESSAGE = get.TWITTER_DETAILS_MESSAGE || "default";
     config.STATUS_MENTION_ACTION = get.STATUS_MENTION_ACTION || "delete";
     config.STATUS_MENTION_BLOCK = get.STATUS_MENTION_BLOCK || [];
     config.GOODBYE_MESSAGE = get.GOODBYE_MESSAGE || [];
+    config.WELCOME_MESSAGE = get.WELCOME_MESSAGE || [];
 
         console.log("⚙️ Config : 🎉 Loaded");
     }

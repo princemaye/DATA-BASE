@@ -481,23 +481,90 @@ module.exports = {
 }
 
 async function uploadToCatbox(buffer, filename = 'file.bin') {
+    const FormData = require('form-data');
+
+    const ext = filename.split('.').pop().toLowerCase();
+    const mimeMap = {
+        mp3: 'audio/mpeg', ogg: 'audio/ogg', opus: 'audio/ogg',
+        mp4: 'video/mp4', webp: 'image/webp', jpg: 'image/jpeg',
+        jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+    };
+    const mimetype = mimeMap[ext] || 'application/octet-stream';
+    const TIMEOUT = 20000;
+
+    // 1️⃣ Catbox
     try {
-        const FormData = require('form-data');
         const form = new FormData();
         form.append('reqtype', 'fileupload');
-        form.append('fileToUpload', buffer, { filename });
-        
-        const response = await axios.post('https://catbox.moe/user/api.php', form, {
-            headers: form.getHeaders(),
-            timeout: 60000
+        form.append('fileToUpload', buffer, { filename, contentType: mimetype });
+        const res = await axios.post('https://catbox.moe/user/api.php', form, {
+            headers: form.getHeaders(), maxContentLength: Infinity, maxBodyLength: Infinity, timeout: TIMEOUT,
         });
-        
-        if (response.data && response.data.startsWith('https://')) {
-            return response.data.trim();
+        if (res.data && res.data.startsWith('https://')) return res.data.trim();
+        throw new Error(res.data || 'No URL');
+    } catch (e) { console.log('Catbox error:', e.message, '— trying fallback...'); }
+
+    // 2️⃣ uguu.se
+    try {
+        const form = new FormData();
+        form.append('files[]', buffer, { filename, contentType: mimetype });
+        const res = await axios.post('https://uguu.se/upload.php', form, {
+            headers: form.getHeaders(), maxContentLength: Infinity, maxBodyLength: Infinity, timeout: TIMEOUT,
+        });
+        const url = res.data?.files?.[0]?.url;
+        if (url && url.startsWith('http')) return url.trim();
+        throw new Error('No URL');
+    } catch (e) { console.log('uguu.se error:', e.message, '— trying fallback...'); }
+
+    // 3️⃣ tmpfiles.org
+    try {
+        const form = new FormData();
+        form.append('file', buffer, { filename, contentType: mimetype });
+        const res = await axios.post('https://tmpfiles.org/api/v1/upload', form, {
+            headers: form.getHeaders(), maxContentLength: Infinity, maxBodyLength: Infinity, timeout: TIMEOUT,
+        });
+        const raw = res.data?.data?.url;
+        if (raw && raw.startsWith('http')) {
+            return raw.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
         }
-        throw new Error('Upload failed');
-    } catch (e) {
-        console.log('Catbox upload error:', e.message);
-        return null;
-    }
+        throw new Error('No URL');
+    } catch (e) { console.log('tmpfiles.org error:', e.message, '— trying fallback...'); }
+
+    // 4️⃣ Litterbox (temporary, 1h)
+    try {
+        const form = new FormData();
+        form.append('reqtype', 'fileupload');
+        form.append('time', '1h');
+        form.append('fileToUpload', buffer, { filename, contentType: mimetype });
+        const res = await axios.post('https://litterbox.catbox.moe/resources/internals/api.php', form, {
+            headers: form.getHeaders(), maxContentLength: Infinity, maxBodyLength: Infinity, timeout: TIMEOUT,
+        });
+        if (res.data && res.data.startsWith('https://')) return res.data.trim();
+        throw new Error(res.data || 'No URL');
+    } catch (e) { console.log('Litterbox error:', e.message, '— trying fallback...'); }
+
+    // 5️⃣ transfer.sh
+    try {
+        const res = await axios.put(`https://transfer.sh/${encodeURIComponent(filename)}`, buffer, {
+            headers: { 'Content-Type': mimetype, 'Max-Days': '1' },
+            maxContentLength: Infinity, maxBodyLength: Infinity, timeout: TIMEOUT,
+        });
+        const url = (res.data || '').trim();
+        if (url.startsWith('http')) return url;
+        throw new Error('No URL');
+    } catch (e) { console.log('transfer.sh error:', e.message, '— trying fallback...'); }
+
+    // 6️⃣ 0x0.st
+    try {
+        const form = new FormData();
+        form.append('file', buffer, { filename, contentType: mimetype });
+        const res = await axios.post('https://0x0.st', form, {
+            headers: form.getHeaders(), maxContentLength: Infinity, maxBodyLength: Infinity, timeout: TIMEOUT,
+        });
+        const url = (res.data || '').trim();
+        if (url.startsWith('http')) return url;
+        throw new Error('No URL');
+    } catch (e) { console.log('0x0.st error:', e.message); }
+
+    return null;
 }
