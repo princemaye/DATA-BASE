@@ -587,6 +587,7 @@ cmd({
   
   // Check if trying to play with self (normalize IDs)
   const senderNum = sender.split("@")[0];
+  if (!quoted.sender) return reply("❌ Could not identify the quoted message sender. Please quote a message from the person you want to challenge.");
   const quotedNum = quoted.sender.split("@")[0];
   if (senderNum === quotedNum) return reply(tttCantPlaySelf);
 

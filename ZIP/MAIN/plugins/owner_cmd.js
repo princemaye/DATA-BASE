@@ -1488,15 +1488,61 @@ cmd(
 cmd(
     {
         pattern: "resetdb",
-        react: "🗃️",
+        react: "⚠️",
         desc: "Reset database and restart bot.",
         category: "owner",
         use: "resetdb",
         filename: __filename,
     },
-    async (conn, mek, m, { reply, isOwners, from }) => {
+    async (conn, mek, m, { reply, isOwners, from, prefix }) => {
         try {
             if (!isOwners) return await reply(ownerMg);
+
+            const warning =
+`╭━━━ ${toBold("⚠️ RESET DATABASE")} ━━━╮
+┃ ${toSmallCaps("warning")} : This will permanently
+┃ wipe ALL saved settings:
+┃
+┃ • Anti-link / anti-bad groups
+┃ • Welcome / goodbye settings
+┃ • Custom messages & reacts
+┃ • Sudo numbers & banned lists
+┃ • Bot name, alive msg, timezone
+┃ • Seedr credentials
+┃
+┃ ${toSmallCaps("action")} : Bot restarts after reset
+┃
+┃ 1️⃣ Yes, reset everything
+┃ 2️⃣ No, cancel
+╰━━━━━━━━━━━━━━━━━━━━╯
+> Reply with 1 to confirm or 2 to cancel`;
+
+            const numrep = [
+                `${prefix}resetdbconfirm`,
+                `${prefix}cancelop`,
+            ];
+
+            const sentMsg = await conn.sendMessage(from, { text: warning }, { quoted: mek });
+            await storenumrepdata({ key: sentMsg.key, numrep, method: "nondecimal" });
+
+        } catch (e) {
+            console.error(e);
+            await conn.sendMessage(from, { react: { text: "❌", key: mek.key } });
+            await reply(errorMg || "❌ Something went wrong!");
+        }
+    },
+);
+
+cmd(
+    {
+        pattern: "resetdbconfirm",
+        desc: "Internal: confirmed DB reset",
+        category: "hidden",
+        filename: __filename,
+    },
+    async (conn, mek, m, { reply, isOwners, from }) => {
+        try {
+            if (!isOwners) return;
 
             await ymd_db.resetFile(dbData.tableName, "Database Reseted 🔁");
             await reply(dbReset);
@@ -1510,11 +1556,23 @@ cmd(
             platformAwareRestart();
         } catch (e) {
             console.error(e);
-            await conn.sendMessage(from, {
-                react: { text: "❌", key: mek.key },
-            });
+            await conn.sendMessage(from, { react: { text: "❌", key: mek.key } });
             await reply(errorMg || "❌ Something went wrong!");
         }
+    },
+);
+
+cmd(
+    {
+        pattern: "cancelop",
+        desc: "Internal: cancel a pending operation",
+        category: "hidden",
+        filename: __filename,
+    },
+    async (conn, mek, m, { reply, isOwners }) => {
+        if (!isOwners) return;
+        await reply("❌ Operation cancelled.");
+        await m.react("❌");
     },
 );
 

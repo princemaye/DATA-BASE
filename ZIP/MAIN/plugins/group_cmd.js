@@ -1645,12 +1645,6 @@ cmd(
             if (!isGroup) {
                 return reply(groupOnly);
             }
-            if (!isAdmins) {
-                if (!isDev) {
-                    return reply(needAdmin);
-                }
-            }
-
             let messageText = q || (quoted && quoted?.msg);
             if (!messageText) {
                 return reply(provideMessageForTag);
@@ -2402,6 +2396,82 @@ cmd(
             reply("✅ Goodbye message reset to default.");
         } catch (e) {
             reply("❌ Failed to reset goodbye message.");
+        }
+    },
+);
+
+cmd(
+    {
+        pattern: "approveall",
+        alias: ["acceptall", "approve"],
+        react: "✅",
+        desc: "Approve all pending group join requests",
+        category: "group",
+        use: "approveall",
+        filename: __filename,
+    },
+    async (conn, mek, m, { from, isGroup, isBotAdmin, isAdmins, isDev, reply }) => {
+        try {
+            if (!isGroup) return reply("❌ This command is for groups only.");
+            if (!isAdmins && !isDev) return reply("❌ Only group admins can use this command.");
+            if (!isBotAdmin) return reply("❌ I need admin privileges to approve join requests.");
+
+            const pending = await conn.groupRequestParticipantsList(from);
+
+            if (!pending || !pending.length) {
+                return reply(
+`╭━━━ ${toBold("APPROVE ALL")} ━━━╮
+┃ ${toSmallCaps("status")} : No pending requests
+╰━━━━━━━━━━━━━━━━━━╯`
+                );
+            }
+
+            await reply(
+`╭━━━ ${toBold("APPROVE ALL")} ━━━╮
+┃ ${toSmallCaps("found")}   : ${pending.length} pending request${pending.length > 1 ? "s" : ""}
+┃ ${toSmallCaps("status")}  : Processing...
+╰━━━━━━━━━━━━━━━━━━╯`
+            );
+
+            let approved = 0;
+            let failed = 0;
+            let rateLimitHit = false;
+
+            for (let i = 0; i < pending.length; i++) {
+                const participant = pending[i];
+                try {
+                    await conn.groupRequestParticipantsUpdate(from, [participant.jid], "approve");
+                    approved++;
+
+                    const delayTime = rateLimitHit ? 3000 : 1500;
+                    await new Promise(resolve => setTimeout(resolve, delayTime));
+                    rateLimitHit = false;
+
+                } catch (err) {
+                    if (err.message?.includes("rate") || err.message?.includes("too many")) {
+                        rateLimitHit = true;
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+                        i--;
+                    } else {
+                        failed++;
+                        console.error(`Failed to approve: ${participant.jid}`, err);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+            }
+
+            reply(
+`╭━━━ ${toBold("APPROVE ALL")} ━━━╮
+┃ ${toSmallCaps("approved")} : ${approved}
+┃ ${toSmallCaps("failed")}   : ${failed}
+┃ ${toSmallCaps("status")}   : Complete
+╰━━━━━━━━━━━━━━━━━━╯`
+            );
+
+        } catch (e) {
+            await conn.sendMessage(from, { react: { text: "❌", key: mek.key } });
+            console.error(e);
+            reply("❌ Failed to process join requests.");
         }
     },
 );

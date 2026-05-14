@@ -312,6 +312,13 @@ config.TWITTER_DETAILS_MESSAGE = get.TWITTER_DETAILS_MESSAGE || "default";
     config.GOODBYE_MESSAGE = get.GOODBYE_MESSAGE || [];
     config.WELCOME_MESSAGE = get.WELCOME_MESSAGE || [];
 
+    // Restore any per-group custom welcome/goodbye messages saved by setwelcomemsg/setgoodbyemsg
+    for (const [k, v] of Object.entries(get)) {
+        if (k.startsWith('CUSTOM_WELCOME_') || k.startsWith('CUSTOM_GOODBYE_')) {
+            config[k] = v;
+        }
+    }
+
         console.log("⚙️ Config : 🎉 Loaded");
     }
   
