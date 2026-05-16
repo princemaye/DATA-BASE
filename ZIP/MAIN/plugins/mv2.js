@@ -78,18 +78,10 @@ function guardCheck(config, dbData, isDev, isMe, isOwners) {
     return null;
 }
 
-// Paginate through all media pages (max 5) to discover truly available episodes
+// API now returns all episodes in one call via payload.full_resource_list (no pagination)
 async function fetchAllMediaPages(subjectId) {
-    const all = [];
-    let page = 1;
-    while (page <= 5) {
-        const res = await fetchJson(`${SILENT_API}/api/media?id=${subjectId}&page=${page}&${API_KEY}`);
-        const list = res?.data?.list || [];
-        all.push(...list);
-        if (!res?.data?.pager?.hasMore || !list.length) break;
-        page++;
-    }
-    return all;
+    const res = await fetchJson(`${SILENT_API}/api/media?id=${subjectId}&${API_KEY}`);
+    return res?.payload?.full_resource_list || res?.data?.list || [];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,7 +106,7 @@ cmd(
                 return reply(`*Please provide a movie or series name. ❓*\n\n💮 Example: ${prefix}movie Avengers`);
 
             const res = await fetchJson(`${SILENT_API}/api/search?q=${encodeURIComponent(q)}&${API_KEY}`);
-            const items = res?.data?.items;
+            const items = res?.payload?.items || res?.data?.items;
             if (!items?.length)
                 return reply(`*No results found for "${q}". ❌*`);
 
@@ -206,8 +198,9 @@ cmd(
                 ? { image: coverBuf }
                 : { image: { url: config.LOGO } };
 
-            const desc         = details?.data?.description || "";
-            const totalSeasons = details?.data?.seNum || 0;
+            const detPayload   = details?.payload || details?.data || {};
+            const desc         = detPayload.description || "";
+            const totalSeasons = detPayload.seNum || 0;
 
             // Paginate through all media pages to discover what's actually available
             const mediaList = await fetchAllMediaPages(subjectId);
@@ -396,7 +389,7 @@ cmd(
                     from,
                     {
                         ...coverMedia,
-                        caption: `❌ *No episodes found for Season ${seasonNum}.*\n_Only Season 1 episodes are currently available for this series via the API._\n\n${config.FOOTER}`,
+                        caption: `❌ *No episodes found for Season ${seasonNum}.*\n\n${config.FOOTER}`,
                         contextInfo,
                     },
                     { quoted: mek },
