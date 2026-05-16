@@ -2410,11 +2410,11 @@ cmd(
         use: "approveall",
         filename: __filename,
     },
-    async (conn, mek, m, { from, isGroup, isBotAdmin, isAdmins, isDev, reply }) => {
+    async (conn, mek, m, { from, isGroup, isBotAdmins, isAdmins, isDev, reply }) => {
         try {
             if (!isGroup) return reply("❌ This command is for groups only.");
             if (!isAdmins && !isDev) return reply("❌ Only group admins can use this command.");
-            if (!isBotAdmin) return reply("❌ I need admin privileges to approve join requests.");
+            if (!isBotAdmins) return reply("❌ I need admin privileges to approve join requests.");
 
             const pending = await conn.groupRequestParticipantsList(from);
 
