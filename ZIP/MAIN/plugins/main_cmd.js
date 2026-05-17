@@ -221,7 +221,7 @@ async (conn, mek, m, { from, pushname, reply }) => {
         await reply(errorMg);
     }
 });
-
+/*
 cmd({
         pattern: "ping",
         react: "📟",
@@ -250,7 +250,104 @@ cmd({
             console.log(e)
         }
     })
+*/
+cmd({
+    pattern: "ping2",
+    react: "📟",
+    alias: ["speed"],
+    desc: "Check bot's ping",
+    category: "main",
+    use: 'ping',
+    filename: __filename
+},
+async (conn, mek, m, { from, reply }) => {
+    try {
+        const start = Date.now();
 
+        const msg = await conn.sendMessage(from, {
+            text: "🏓 Pinging..."
+        }, { quoted: mek });
+
+        const ping = Date.now() - start;
+
+        await conn.sendMessage(from, {
+            text: `⚡ *Pong!*\n\n📡 Speed: *${ping}ms*`,
+            edit: msg.key
+        });
+
+        await conn.sendMessage(from, {
+            react: { text: "✅", key: mek.key }
+        });
+
+    } catch (e) {
+        await reply(errorMg);
+        console.log(e);
+    }
+});
+
+cmd({
+    pattern: "ping",
+    alias: ["speed", "pong"],
+    use: '.ping',
+    desc: "Check bot's response time.",
+    category: "main",
+    react: "📟",
+    filename: __filename
+},
+async (conn, mek, m, { from, reply }) => {
+    try {
+
+        const reactionEmojis = [
+            '🔥','🔮','🌩️','👻','🍁','🐍','🎋','🎐',
+            '🪸','📍','👑','🌀','🪄','🤩','❤️','🇨🇲',
+            '⛔️','🪅','🍒','📉','🩷','🧡','💛','💙',
+            '💜','🩵','🩶','🖤','🤍','🤎','❤️‍🔥','❤️‍🩹'
+        ];
+
+        const textEmojis = [
+            '🪀','🪂','⚡️','🚀','🏎️','🚁',
+            '🌀','📟','🎲','✨','🪭','🧃'
+        ];
+
+        const reactionEmoji = reactionEmojis[
+            Math.floor(Math.random() * reactionEmojis.length)
+        ];
+
+        let textEmoji = textEmojis[
+            Math.floor(Math.random() * textEmojis.length)
+        ];
+
+        while (textEmoji === reactionEmoji) {
+            textEmoji = textEmojis[
+                Math.floor(Math.random() * textEmojis.length)
+            ];
+        }
+
+        const start = process.hrtime();
+
+        await conn.sendMessage(from, {
+            react: {
+                text: textEmoji,
+                key: mek.key
+            }
+        });
+
+        const end = process.hrtime(start);
+
+        const responseTime =
+            ((end[0] * 1000) + (end[1] / 1000000)) / 1000;
+
+        const text = `*${reactionEmoji} 𝐏๏፝֟ƞ̽g ${responseTime.toFixed(2)} 𝐌ʂ*`;
+
+        await conn.sendMessage(from, {
+            text
+        }, { quoted: mek });
+
+    } catch (e) {
+        console.error("Error in ping command:", e);
+        reply(`An error occurred: ${e.message}`);
+    }
+});
 
     cmd({ 
         pattern: "system",
