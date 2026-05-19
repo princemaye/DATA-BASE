@@ -26,8 +26,8 @@ const { storenumrepdata } = require("../lib/numreply-db");
 const dbData = require("../lib/config");
 
 // ─── API ─────────────────────────────────────────────────────────────────────
-const SILENT_API = "https://mv-api.silent7.app";
-const API_KEY    = "api=silenttech";
+const SILENT_API = "https://princce-movvie-aapi.vercel.app";
+const API_KEY = "api=Mayelprince";
 const NEWSLETTER = "120363404978384902@newsletter";
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
