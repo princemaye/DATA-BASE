@@ -638,104 +638,126 @@ cmd(
         pattern: "customize",
         react: "🗃",
         alias: ["cus"],
-        desc: "Customize bot",
+        desc: "Customize bot settings (reply to text to set, or use alone to disable/reset)",
         category: "owner",
-        use: "customize < Reply to text >",
+        use: "customize [Reply to text] | customize (no reply = disable menu)",
         filename: __filename,
     },
     async (conn, mek, m, { from, reply, isOwners, prefix }) => {
         try {
             if (!isOwners) return await reply(ownerMg);
 
-            const text =
-                m?.quoted?.type === "conversation"
-                    ? m?.quoted?.conversation
-                    : false;
+            const bot_title = botName || "PRINCE-MDX";
 
+            // Extract quoted text from various message types
+            const quoted = m?.quoted;
+            const text = quoted
+                ? (quoted.conversation || quoted.text || quoted.caption ||
+                   quoted.msg?.conversation || quoted.msg?.extendedTextMessage?.text ||
+                   quoted.extendedTextMessage?.text || null)
+                : null;
+
+            // ─── DISABLE / RESET MODE (no reply) ─────────────────────────
             if (!text) {
-                const msg = await conn.sendMessage(from, { text: `*Please reply to a text message ❌*` },
+                // Each entry: [label, key, resetValue]
+                const resetItems = [
+                    ["BOT_NAME",                 "BOT_NAME",                 "default"],
+                    ["MENU_MESSAGE",              "MENU_MESSAGE",             "default"],
+                    ["SYSTEM_MESSAGE",            "SYSTEM_MESSAGE",           "default"],
+                    ["ALIVE_MESSAGE",             "ALIVE_MESSAGE",            "default"],
+                    ["LOGO",                      "LOGO",                     "none"],
+                    ["FOOTER",                    "FOOTER",                   "none"],
+                    ["CAPTION",                   "CAPTION",                  "none"],
+                    ["FILE_NAME",                 "FILE_NAME",                "none"],
+                    ["MOVIE_DETAILS_CARD",         "MOVIE_DETAILS_CARD",       "default"],
+                    ["EPISODE_DETAILS_CARD",       "EPISODE_DETAILS_CARD",     "default"],
+                    ["TIKTOK_DETAILS_MESSAGE",     "TIKTOK_DETAILS_MESSAGE",   "default"],
+                    ["FB_DETAILS_MESSAGE",         "FB_DETAILS_MESSAGE",       "default"],
+                    ["SONG_DETAILS_MESSAGE",       "SONG_DETAILS_MESSAGE",     "default"],
+                    ["VIDEO_DETAILS_MESSAGE",      "VIDEO_DETAILS_MESSAGE",    "default"],
+                    ["TWITTER_DETAILS_MESSAGE",    "TWITTER_DETAILS_MESSAGE",  "default"],
+                    ["PORNHUB_DETAILS_MESSAGE",    "PORNHUB_DETAILS_MESSAGE",  "default"],
+                    ["XVIDEO_DETAILS_MESSAGE",     "XVIDEO_DETAILS_MESSAGE",   "default"],
+                    ["OMDB_DETAILS_CARD",          "OMDB_DETAILS_CARD",        "default"],
+                    ["TMDB_DETAILS_CARD",          "TMDB_DETAILS_CARD",        "default"],
+                ];
+
+                const numrep = resetItems.map(
+                    ([, key, val]) => `${prefix}setenv ${key} ${val}`,
+                );
+
+                let info = `╔══〘 *${bot_title}* 〙══╗\n`;
+                info += `➠ Mode   : 🔴 Disable / Reset\n`;
+                info += `➠ Options: ${numrep.length}\n`;
+                info += `╚══════════════════╝\n\n`;
+                info += `╭━━━━❮ *RESET OPTIONS* ❯━⊷\n`;
+                info += resetItems
+                    .map(
+                        ([label,, val], i) =>
+                            `┃➠ ${(i + 1).toString().padStart(2, "0")}. ${toSmallCaps(label)} → ${val}`,
+                    )
+                    .join("\n");
+                info += `\n╰━━━━━━━━━━━━━━━━━⊷\n`;
+                info += `> _Reply with a number to reset that setting_\n${config.FOOTER}`;
+
+                const sentMsg = await conn.sendMessage(
+                    from,
+                    { image: { url: config.LOGO }, caption: info },
                     { quoted: mek },
                 );
-                await conn.sendMessage(from, {
-                    react: { text: "❓", key: msg.key },
-                });
+                await conn.sendMessage(from, { react: { text: "🔴", key: sentMsg.key } });
+                await storenumrepdata({ key: sentMsg.key, numrep, method: "nondecimal" });
                 return;
             }
 
-            const bot_title = botName || "PRINCE-MDX";
-
-            // All customizable options
-            const numrep = [
-                `${prefix}setenv BOT_NAME ${text}`,
-                `${prefix}setenv MENU_MESSAGE ${text}`,
-                `${prefix}setenv SYSTEM_MESSAGE ${text}`,
-                `${prefix}setenv ALIVE_MESSAGE ${text}`,
-                `${prefix}setenv LOGO ${text}`,
-                `${prefix}setenv FOOTER ${text}`,
-                `${prefix}setenv CAPTION ${text}`,
-                `${prefix}setenv FILE_NAME ${text}`,
-                `${prefix}setenv MOVIE_DETAILS_CARD ${text}`,
-                `${prefix}setenv EPISODE_DETAILS_CARD ${text}`,
-                `${prefix}setenv TIKTOK_DETAILS_MESSAGE ${text}`,
-                `${prefix}setenv FB_DETAILS_MESSAGE ${text}`,
-                `${prefix}setenv SONG_DETAILS_MESSAGE ${text}`,
-                `${prefix}setenv VIDEO_DETAILS_MESSAGE ${text}`,
-                `${prefix}setenv TWITTER_DETAILS_MESSAGE ${text}`,
-                `${prefix}setenv PORNHUB_DETAILS_MESSAGE ${text}`,
-                `${prefix}setenv XVIDEO_DETAILS_MESSAGE ${text}`,
-                `${prefix}setenv OMDB_DETAILS_CARD ${text}`,
-                `${prefix}setenv TMDB_DETAILS_CARD ${text}`,
+            // ─── SET MODE (reply to text) ─────────────────────────────────
+            const setItems = [
+                "BOT_NAME",
+                "MENU_MESSAGE",
+                "SYSTEM_MESSAGE",
+                "ALIVE_MESSAGE",
+                "LOGO",
+                "FOOTER",
+                "CAPTION",
+                "FILE_NAME",
+                "MOVIE_DETAILS_CARD",
+                "EPISODE_DETAILS_CARD",
+                "TIKTOK_DETAILS_MESSAGE",
+                "FB_DETAILS_MESSAGE",
+                "SONG_DETAILS_MESSAGE",
+                "VIDEO_DETAILS_MESSAGE",
+                "TWITTER_DETAILS_MESSAGE",
+                "PORNHUB_DETAILS_MESSAGE",
+                "XVIDEO_DETAILS_MESSAGE",
+                "OMDB_DETAILS_CARD",
+                "TMDB_DETAILS_CARD",
             ];
 
-            const rows = numrep.map((cmd) => ({
-                title: cmd.split(" ")[1],
-                description: "Tap to apply",
-                id: cmd,
-            }));
+            const numrep = setItems.map((key) => `${prefix}setenv ${key} ${text}`);
 
-            const listData = {
-                title: "Customize Bot Settings",
-                sections: [
-                    {
-                        title: "Options",
-                        rows,
-                    },
-                ],
-            };
-
-            // BUTTON MODE
-
-            // NORMAL MODE (YOUR NEW DESIGN)
-            let info = `╔══〘 *${bot_title}* 〙══╗
-➠ Text Provided : ${text}
-➠ Total Options : ${numrep.length}
-╚══════════════════╝
-
-╭━━━━❮ *CUSTOMIZABLE* ❯━⊷
-`;
-
-            info += numrep
+            let info = `╔══〘 *${bot_title}* 〙══╗\n`;
+            info += `➠ Mode   : 🟢 Set / Apply\n`;
+            info += `➠ Value  : ${text}\n`;
+            info += `➠ Options: ${numrep.length}\n`;
+            info += `╚══════════════════╝\n\n`;
+            info += `╭━━━━❮ *CUSTOMIZABLE* ❯━⊷\n`;
+            info += setItems
                 .map(
-                    (cmd, i) =>
-                        `┃➠ ${(i + 1).toString().padStart(2, "0")}. ${cmd.split(" ")[1]}`,
+                    (key, i) =>
+                        `┃➠ ${(i + 1).toString().padStart(2, "0")}. ${toSmallCaps(key)}`,
                 )
                 .join("\n");
+            info += `\n╰━━━━━━━━━━━━━━━━━⊷\n`;
+            info += `> _Reply with a number to apply that setting_\n${config.FOOTER}`;
 
-            info += `\n╰━━━━━━━━━━━━━━━━━⊷\n${config.FOOTER}`;
-
-            const sentMsg = await conn.sendMessage(from, { image: { url: config.LOGO }, caption: info },
+            const sentMsg = await conn.sendMessage(
+                from,
+                { image: { url: config.LOGO }, caption: info },
                 { quoted: mek },
             );
+            await conn.sendMessage(from, { react: { text: "🎨", key: sentMsg.key } });
+            await storenumrepdata({ key: sentMsg.key, numrep, method: "nondecimal" });
 
-            await conn.sendMessage(from, {
-                react: { text: "🎨", key: sentMsg.key },
-            });
-
-            await storenumrepdata({
-                key: sentMsg.key,
-                numrep,
-                method: "nondecimal",
-            });
         } catch (e) {
             console.log(e);
             await reply(errorMg);
