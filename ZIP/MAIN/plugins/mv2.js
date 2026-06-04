@@ -31,15 +31,17 @@ const API_KEY = "api=Mayelprince";
 const NEWSLETTER = "120363404978384902@newsletter";
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
-const oce    = "`";
-const pk     = "`(";
-const pk2    = ")`";
+const oce = "`";
+const pk = "`(";
+const pk2 = ")`";
 const botName = "PRINCE-𝖬𝖣X";
 
-const preMg         = "*The command is a command given to premium users by the owners here. ‼️*";
-const disMgOnlyme   = "*This feature is set to work only with the Bot number. ‼️*";
+const preMg =
+    "*The command is a command given to premium users by the owners here. ‼️*";
+const disMgOnlyme =
+    "*This feature is set to work only with the Bot number. ‼️*";
 const disMgOnlyOwners = "*This feature is set to work only with the owner. ‼️*";
-const disMgAll      = "*This feature is disabled. ‼️*";
+const disMgAll = "*This feature is disabled. ‼️*";
 
 function formatNumber(n) {
     return String(n).padStart(2, "0");
@@ -56,31 +58,23 @@ function formatBytes(bytes) {
     const b = parseInt(bytes) || 0;
     if (b === 0) return "N/A";
     if (b >= 1073741824) return (b / 1073741824).toFixed(2) + " GB";
-    if (b >= 1048576)    return (b / 1048576).toFixed(0) + " MB";
+    if (b >= 1048576) return (b / 1048576).toFixed(0) + " MB";
     return (b / 1024).toFixed(0) + " KB";
 }
 
-const contextInfo = {
-    forwardingScore: 999,
-    isForwarded: true,
-    forwardedNewsletterMessageInfo: {
-        newsletterJid: NEWSLETTER,
-        newsletterName: botName,
-        serverMessageId: -1,
-    },
-};
-
 function guardCheck(config, dbData, isDev, isMe, isOwners) {
     if (!dbData?.FREE_MOVIE_CMD && !isDev) return preMg;
-    if (config.MOVIE_DL === "only_me"     && !isMe     && !isDev) return disMgOnlyme;
-    if (config.MOVIE_DL === "only_owners" && !isOwners)           return disMgOnlyOwners;
-    if (config.MOVIE_DL === "disable"     && !isDev)              return disMgAll;
+    if (config.MOVIE_DL === "only_me" && !isMe && !isDev) return disMgOnlyme;
+    if (config.MOVIE_DL === "only_owners" && !isOwners) return disMgOnlyOwners;
+    if (config.MOVIE_DL === "disable" && !isDev) return disMgAll;
     return null;
 }
 
 // API now returns all episodes in one call via payload.full_resource_list (no pagination)
 async function fetchAllMediaPages(subjectId) {
-    const res = await fetchJson(`${SILENT_API}/api/media?id=${subjectId}&${API_KEY}`);
+    const res = await fetchJson(
+        `${SILENT_API}/api/media?id=${subjectId}&${API_KEY}`,
+    );
     return res?.payload?.full_resource_list || res?.data?.list || [];
 }
 
@@ -103,22 +97,26 @@ cmd(
             if (block) return reply(block);
 
             if (!q)
-                return reply(`*Please provide a movie or series name. ❓*\n\n💮 Example: ${prefix}movie Avengers`);
+                return reply(
+                    `*Please provide a movie or series name. ❓*\n\n💮 Example: ${prefix}movie Avengers`,
+                );
 
-            const res = await fetchJson(`${SILENT_API}/api/search?q=${encodeURIComponent(q)}&${API_KEY}`);
+            const res = await fetchJson(
+                `${SILENT_API}/api/search?q=${encodeURIComponent(q)}&${API_KEY}`,
+            );
             const items = res?.payload?.items || res?.data?.items;
             if (!items?.length)
                 return reply(`*No results found for "${q}". ❌*`);
 
             let movieList = "";
-            const numrep  = [];
+            const numrep = [];
 
             for (const item of items) {
-                const isTV    = item.subjectType === 2;
-                const icon    = isTV ? "📺" : "🎬";
+                const isTV = item.subjectType === 2;
+                const icon = isTV ? "📺" : "🎬";
                 const typeTag = isTV ? "[Series]" : "[Movie]";
-                const idx     = numrep.length + 1;
-                const year    = (item.releaseDate || "").slice(0, 4);
+                const idx = numrep.length + 1;
+                const year = (item.releaseDate || "").slice(0, 4);
 
                 // Pack: subjectId🎈title🎈subjectType🎈cover🎈genre🎈releaseDate🎈imdb
                 const packed = [
@@ -126,7 +124,7 @@ cmd(
                     item.title,
                     item.subjectType,
                     item.cover?.url || config.LOGO,
-                    item.genre       || "N/A",
+                    item.genre || "N/A",
                     item.releaseDate || "N/A",
                     item.imdbRatingValue || "N/A",
                 ].join("🎈");
@@ -146,15 +144,24 @@ cmd(
 
             const mass = await conn.sendMessage(
                 from,
-                { image: { url: config.LOGO }, caption: `${caption}\n${config.FOOTER}`, contextInfo },
+                {
+                    image: { url: config.LOGO },
+                    caption: `${caption}\n${config.FOOTER}`,
+                },
                 { quoted: mek },
             );
 
-            await storenumrepdata({ key: mass.key, numrep, method: "nondecimal" });
+            await storenumrepdata({
+                key: mass.key,
+                numrep,
+                method: "nondecimal",
+            });
         } catch (e) {
             console.error(e);
             reply("*An error occurred. Please try again later. ⛔️*");
-            await conn.sendMessage(from, { react: { text: "⛔️", key: mek.key } });
+            await conn.sendMessage(from, {
+                react: { text: "⛔️", key: mek.key },
+            });
         }
     },
 );
@@ -176,30 +183,32 @@ cmd(
 
             if (!q) return reply(`*Please provide movie data. ❓*`);
 
-            const parts       = q.split("🎈");
-            const subjectId   = parts[0] || "";
-            const title       = parts[1] || "N/A";
+            const parts = q.split("🎈");
+            const subjectId = parts[0] || "";
+            const title = parts[1] || "N/A";
             const subjectType = parseInt(parts[2]) || 1;
-            const cover       = parts[3] || config.LOGO;
-            const genre       = parts[4] || "N/A";
+            const cover = parts[3] || config.LOGO;
+            const genre = parts[4] || "N/A";
             const releaseDate = parts[5] || "N/A";
-            const imdb        = parts[6] || "N/A";
+            const imdb = parts[6] || "N/A";
 
-            const isTV      = subjectType === 2;
+            const isTV = subjectType === 2;
             const typeLabel = isTV ? "📺 Series" : "🎬 Movie";
 
             // Fetch cover image and details in parallel; media is paginated separately below
             const [coverBuf, details] = await Promise.all([
                 safeImageBuffer(cover),
-                fetchJson(`${SILENT_API}/api/item-details?id=${subjectId}&${API_KEY}`),
+                fetchJson(
+                    `${SILENT_API}/api/item-details?id=${subjectId}&${API_KEY}`,
+                ),
             ]);
 
             const coverMedia = coverBuf
                 ? { image: coverBuf }
                 : { image: { url: config.LOGO } };
 
-            const detPayload   = details?.payload || details?.data || {};
-            const desc         = detPayload.description || "";
+            const detPayload = details?.payload || details?.data || {};
+            const desc = detPayload.description || "";
             const totalSeasons = detPayload.seNum || 0;
 
             // Paginate through all media pages to discover what's actually available
@@ -214,7 +223,9 @@ cmd(
                 `  ▫ 🎀 Genre    : ${genre}\n` +
                 `  ▫ ⭐ IMDB     : ${imdb}\n` +
                 (isTV ? `  ▫ 📺 Seasons  : ${totalSeasons || "N/A"}\n` : "") +
-                (desc ? `\n📝 _${desc.slice(0, 200)}${desc.length > 200 ? "..." : ""}_\n` : "");
+                (desc
+                    ? `\n📝 _${desc.slice(0, 200)}${desc.length > 200 ? "..." : ""}_\n`
+                    : "");
 
             if (!mediaList.length) {
                 await conn.sendMessage(
@@ -222,7 +233,6 @@ cmd(
                     {
                         ...coverMedia,
                         caption: `${infoCot}\n❌ *No download links found for this title.*\n_The API may not have it yet._\n\n${config.FOOTER}`,
-                        contextInfo,
                     },
                     { quoted: mek },
                 );
@@ -235,10 +245,13 @@ cmd(
                 const seasonMap = new Map(); // se → episode count
                 for (const item of mediaList) {
                     if (!item.se || !item.ep || !item.resourceLink) continue;
-                    if (!seasonMap.has(item.se)) seasonMap.set(item.se, new Set());
+                    if (!seasonMap.has(item.se))
+                        seasonMap.set(item.se, new Set());
                     seasonMap.get(item.se).add(item.ep);
                 }
-                const availableSeasons = [...seasonMap.entries()].sort((a, b) => a[0] - b[0]);
+                const availableSeasons = [...seasonMap.entries()].sort(
+                    (a, b) => a[0] - b[0],
+                );
 
                 if (!availableSeasons.length) {
                     await conn.sendMessage(
@@ -246,7 +259,6 @@ cmd(
                         {
                             ...coverMedia,
                             caption: `${infoCot}\n❌ *No season data found.*\n\n${config.FOOTER}`,
-                            contextInfo,
                         },
                         { quoted: mek },
                     );
@@ -257,7 +269,7 @@ cmd(
                 const numrep = [];
 
                 for (const [se, epSet] of availableSeasons) {
-                    const idx     = numrep.length + 1;
+                    const idx = numrep.length + 1;
                     const epCount = epSet.size;
                     seasonList += `*${formatNumber(idx)} ||* 📁 Season ${se}  •  ${epCount} episode${epCount !== 1 ? "s" : ""}\n`;
 
@@ -271,19 +283,25 @@ cmd(
                     {
                         ...coverMedia,
                         caption: `${infoCot}${seasonList}\n${config.FOOTER}`,
-                        contextInfo,
                     },
                     { quoted: mek },
                 );
 
-                await storenumrepdata({ key: epMsg.key, numrep, method: "nondecimal" });
-
+                await storenumrepdata({
+                    key: epMsg.key,
+                    numrep,
+                    method: "nondecimal",
+                });
             } else {
                 // ── Movie: show quality list directly ──
                 // All items have se=0, ep=0; each item is a different quality
                 const qualities = mediaList
-                    .filter(i => i.resourceLink)
-                    .sort((a, b) => (parseInt(a.resolution) || 0) - (parseInt(b.resolution) || 0));
+                    .filter((i) => i.resourceLink)
+                    .sort(
+                        (a, b) =>
+                            (parseInt(a.resolution) || 0) -
+                            (parseInt(b.resolution) || 0),
+                    );
 
                 if (!qualities.length) {
                     await conn.sendMessage(
@@ -291,7 +309,6 @@ cmd(
                         {
                             ...coverMedia,
                             caption: `${infoCot}\n❌ *No download links found.*\n\n${config.FOOTER}`,
-                            contextInfo,
                         },
                         { quoted: mek },
                     );
@@ -302,10 +319,10 @@ cmd(
                 const numrep = [];
 
                 for (const dl of qualities) {
-                    const idx          = numrep.length + 1;
+                    const idx = numrep.length + 1;
                     const qualityLabel = `${dl.resolution || "?"}p`;
-                    const sizeLabel    = formatBytes(dl.size);
-                    const dur          = formatDuration(dl.duration);
+                    const sizeLabel = formatBytes(dl.size);
+                    const dur = formatDuration(dl.duration);
 
                     qualityList += `*${formatNumber(idx)} ||* 🎯 ${qualityLabel}  •  📦 ${sizeLabel}  •  ⏱ ${dur}\n`;
 
@@ -326,18 +343,22 @@ cmd(
                     {
                         ...coverMedia,
                         caption: `${infoCot}${qualityList}\n${config.FOOTER}`,
-                        contextInfo,
                     },
                     { quoted: mek },
                 );
 
-                await storenumrepdata({ key: epMsg.key, numrep, method: "nondecimal" });
+                await storenumrepdata({
+                    key: epMsg.key,
+                    numrep,
+                    method: "nondecimal",
+                });
             }
-
         } catch (e) {
             console.error(e);
             reply("*An error occurred. Please try again later. ⛔️*");
-            await conn.sendMessage(from, { react: { text: "⛔️", key: mek.key } });
+            await conn.sendMessage(from, {
+                react: { text: "⛔️", key: mek.key },
+            });
         }
     },
 );
@@ -359,10 +380,10 @@ cmd(
 
             if (!q) return reply(`*Please provide season data. ❓*`);
 
-            const parts     = q.split("🎈");
+            const parts = q.split("🎈");
             const subjectId = parts[0] || "";
-            const title     = parts[1] || "N/A";
-            const cover     = parts[2] || config.LOGO;
+            const title = parts[1] || "N/A";
+            const cover = parts[2] || config.LOGO;
             const seasonNum = parseInt(parts[3]) || 1;
 
             // Fetch cover and all paginated media in parallel
@@ -379,7 +400,8 @@ cmd(
             const epSet = new Map();
             for (const item of mediaList) {
                 if (item.se !== seasonNum) continue;
-                if (!epSet.has(item.ep)) epSet.set(item.ep, item.title || `Episode ${item.ep}`);
+                if (!epSet.has(item.ep))
+                    epSet.set(item.ep, item.title || `Episode ${item.ep}`);
             }
 
             const episodes = [...epSet.entries()].sort((a, b) => a[0] - b[0]);
@@ -390,7 +412,6 @@ cmd(
                     {
                         ...coverMedia,
                         caption: `❌ *No episodes found for Season ${seasonNum}.*\n\n${config.FOOTER}`,
-                        contextInfo,
                     },
                     { quoted: mek },
                 );
@@ -405,7 +426,14 @@ cmd(
                 epList += `*${formatNumber(idx)} ||* E${String(epNum).padStart(2, "0")} — ${epTitle}\n`;
 
                 // Pack: subjectId🎈title🎈cover🎈seasonNum🎈epNum🎈epTitle
-                const packed = [subjectId, title, cover, seasonNum, epNum, epTitle].join("🎈");
+                const packed = [
+                    subjectId,
+                    title,
+                    cover,
+                    seasonNum,
+                    epNum,
+                    epTitle,
+                ].join("🎈");
                 numrep.push(`${prefix}mv_ep ${packed}`);
             }
 
@@ -414,17 +442,21 @@ cmd(
                 {
                     ...coverMedia,
                     caption: `${epList}\n${config.FOOTER}`,
-                    contextInfo,
                 },
                 { quoted: mek },
             );
 
-            await storenumrepdata({ key: epMsg.key, numrep, method: "nondecimal" });
-
+            await storenumrepdata({
+                key: epMsg.key,
+                numrep,
+                method: "nondecimal",
+            });
         } catch (e) {
             console.error(e);
             reply("*An error occurred. Please try again later. ⛔️*");
-            await conn.sendMessage(from, { react: { text: "⛔️", key: mek.key } });
+            await conn.sendMessage(from, {
+                react: { text: "⛔️", key: mek.key },
+            });
         }
     },
 );
@@ -446,13 +478,13 @@ cmd(
 
             if (!q) return reply(`*Please provide episode data. ❓*`);
 
-            const parts     = q.split("🎈");
+            const parts = q.split("🎈");
             const subjectId = parts[0] || "";
-            const title     = parts[1] || "N/A";
-            const cover     = parts[2] || config.LOGO;
+            const title = parts[1] || "N/A";
+            const cover = parts[2] || config.LOGO;
             const seasonNum = parseInt(parts[3]) || 1;
-            const epNum     = parseInt(parts[4]) || 1;
-            const epTitle   = parts[5] || `Episode ${epNum}`;
+            const epNum = parseInt(parts[4]) || 1;
+            const epTitle = parts[5] || `Episode ${epNum}`;
 
             const epLabel = `S${seasonNum}E${String(epNum).padStart(2, "0")} — ${epTitle}`;
 
@@ -468,8 +500,15 @@ cmd(
 
             // Filter to entries for this specific season + episode
             const qualities = mediaList
-                .filter(i => i.se === seasonNum && i.ep === epNum && i.resourceLink)
-                .sort((a, b) => (parseInt(a.resolution) || 0) - (parseInt(b.resolution) || 0));
+                .filter(
+                    (i) =>
+                        i.se === seasonNum && i.ep === epNum && i.resourceLink,
+                )
+                .sort(
+                    (a, b) =>
+                        (parseInt(a.resolution) || 0) -
+                        (parseInt(b.resolution) || 0),
+                );
 
             if (!qualities.length) {
                 await conn.sendMessage(
@@ -477,7 +516,6 @@ cmd(
                     {
                         ...coverMedia,
                         caption: `❌ *No download links found for ${epLabel}.*\n\n${config.FOOTER}`,
-                        contextInfo,
                     },
                     { quoted: mek },
                 );
@@ -494,14 +532,21 @@ cmd(
             const numrep = [];
 
             for (const dl of qualities) {
-                const idx          = numrep.length + 1;
+                const idx = numrep.length + 1;
                 const qualityLabel = `${dl.resolution || "?"}p`;
-                const sizeLabel    = formatBytes(dl.size);
-                const dur          = formatDuration(dl.duration);
+                const sizeLabel = formatBytes(dl.size);
+                const dur = formatDuration(dl.duration);
 
                 qualityList += `*${formatNumber(idx)} ||* 🎯 ${qualityLabel}  •  📦 ${sizeLabel}  •  ⏱ ${dur}\n`;
 
-                const packed = [dl.resourceLink, title, qualityLabel, sizeLabel, cover, epLabel].join("🎈");
+                const packed = [
+                    dl.resourceLink,
+                    title,
+                    qualityLabel,
+                    sizeLabel,
+                    cover,
+                    epLabel,
+                ].join("🎈");
                 numrep.push(`${prefix}movie_dl ${packed}`);
             }
 
@@ -510,17 +555,21 @@ cmd(
                 {
                     ...coverMedia,
                     caption: `${qualityList}\n${config.FOOTER}`,
-                    contextInfo,
                 },
                 { quoted: mek },
             );
 
-            await storenumrepdata({ key: epMsg.key, numrep, method: "nondecimal" });
-
+            await storenumrepdata({
+                key: epMsg.key,
+                numrep,
+                method: "nondecimal",
+            });
         } catch (e) {
             console.error(e);
             reply("*An error occurred. Please try again later. ⛔️*");
-            await conn.sendMessage(from, { react: { text: "⛔️", key: mek.key } });
+            await conn.sendMessage(from, {
+                react: { text: "⛔️", key: mek.key },
+            });
         }
     },
 );
@@ -541,19 +590,21 @@ cmd(
             if (block) return reply(block);
 
             if (!q)
-                return reply(`*Usage: ${prefix}movie_dl <url>🎈<title>🎈<quality>🎈<size>🎈<cover>🎈<epLabel>*`);
+                return reply(
+                    `*Usage: ${prefix}movie_dl <url>🎈<title>🎈<quality>🎈<size>🎈<cover>🎈<epLabel>*`,
+                );
 
-            const parts       = q.split("🎈");
+            const parts = q.split("🎈");
             const downloadUrl = parts[0]?.trim() || "";
-            const title       = parts[1]?.trim() || "Unknown";
-            const quality     = parts[2]?.trim() || "N/A";
-            const sizeLabel   = parts[3]?.trim() || "N/A";
-            const cover       = parts[4]?.trim() || config.LOGO;
-            const epLabel     = parts[5]?.trim() || "";
+            const title = parts[1]?.trim() || "Unknown";
+            const quality = parts[2]?.trim() || "N/A";
+            const sizeLabel = parts[3]?.trim() || "N/A";
+            const cover = parts[4]?.trim() || config.LOGO;
+            const epLabel = parts[5]?.trim() || "";
 
             if (!downloadUrl) return reply("*Invalid download URL. ❌*");
 
-            const coverBuf   = await safeImageBuffer(cover);
+            const coverBuf = await safeImageBuffer(cover);
             const coverMedia = coverBuf
                 ? { image: coverBuf }
                 : { image: { url: config.LOGO } };
@@ -578,9 +629,9 @@ cmd(
                 thumbnailBuffer = undefined;
             }
 
-            const safeTitle  = displayTitle.replace(/[/\\:*?"<>|]/g, " ").trim();
+            const safeTitle = displayTitle.replace(/[/\\:*?"<>|]/g, " ").trim();
             const filePrefix = config.FILE_NAME ? config.FILE_NAME + " " : "";
-            const fileName   = `${filePrefix}${safeTitle} [${quality}].mp4`;
+            const fileName = `${filePrefix}${safeTitle} [${quality}].mp4`;
 
             const caption =
                 `*${displayTitle}*\n` +
@@ -604,12 +655,15 @@ cmd(
             });
             await m.react("✔️");
             await inputMovie(false, displayTitle, Date.now());
-
         } catch (e) {
             await resetMovie();
             console.error(e);
-            await reply(e.message || "*An error occurred. Please try again later. ⛔️*");
-            await conn.sendMessage(from, { react: { text: "⛔️", key: mek.key } });
+            await reply(
+                e.message || "*An error occurred. Please try again later. ⛔️*",
+            );
+            await conn.sendMessage(from, {
+                react: { text: "⛔️", key: mek.key },
+            });
         }
     },
 );
