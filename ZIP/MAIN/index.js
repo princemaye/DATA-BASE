@@ -4,6 +4,7 @@ const {
     DisconnectReason,
     jidNormalizedUser,
     fetchLatestBaileysVersion,
+    fetchLatestWaWebVersion,
     getContentType,
     Browsers,
     getAggregateVotesInPollMessage,
@@ -447,7 +448,16 @@ async function princeMd(userName = "Princemaye", repoName = "DATA-BASE"){
     const ymd_db = new DBM(dbData.TOKEN, dbData.USER_NAME, dbData.REPO_NAME);
     console.log(`🛰️ Baileys      : 🔌 Connecting to Latest Version...`)
     const { state, saveCreds } = await useMultiFileAuthState(sessionFolder);
-    const { version } = await fetchLatestBaileysVersion();
+    let version;
+    try {
+        const waVersion = await fetchLatestWaWebVersion();
+        version = waVersion.version;
+        console.log(`📡 WA Version   : ${version.join('.')}`);
+    } catch(e) {
+        const fallback = await fetchLatestBaileysVersion();
+        version = fallback.version;
+        console.log(`📡 WA Version   : ${version.join('.')} (fallback)`);
+    }
     // const version = [2, 3000, 1029030078];
     // const version = [2, 3000, 1015901];
   //const warning_db = new WarningDB(dbData.TOKEN, dbData.USER_NAME, dbData.REPO_NAME, "warnings.json");
@@ -536,9 +546,9 @@ async function princeMd(userName = "Princemaye", repoName = "DATA-BASE"){
                 break;
 
             case 405:
-                console.log("💾 Invalid session. Reconnecting...");
+                console.log("💾 Invalid session (405). Restarting to reload session...");
                 fs.rmSync(sessionFolder, { recursive: true, force: true });
-                await connectToWA();
+                process.exit(0);
                 break;
 
             default:
