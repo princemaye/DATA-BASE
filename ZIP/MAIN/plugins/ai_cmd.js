@@ -6,7 +6,7 @@ const { fetchJson, uploadToCatbox } = require("../lib/functions");
 const { blackbox } = require("../lib/scraper");
 const { downloadMediaMessage } = require("prince-baileys");
 
-const PRINCE_API_KEY = "prince";
+const PRINCE_API_KEY = "prince_api_56yjJ568dte4";
 const PRINCE_API_BASE = "https://api.princetechn.com/api/ai";
 
 // ============================= L A N G U A G E =============================
