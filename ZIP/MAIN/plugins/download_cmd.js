@@ -94,7 +94,7 @@ cmd({
         let result = null;
         for (const ep of endpoints) {
             try {
-                const apiUrl = `https://api.princetechn.com/api/download/${ep}?apikey=prince&url=${encodeURIComponent(url)}`;
+                const apiUrl = `https://api.princetechn.com/api/download/${ep}?apikey=prince_api_56yjJ568dte4&url=${encodeURIComponent(url)}`;
                 const res = await axios.get(apiUrl, { timeout: 25000 });
                 if (res.data?.success && res.data?.result) { result = res.data.result; break; }
             } catch (_) { continue; }
@@ -305,7 +305,7 @@ cmd({
         const type = parts[1]?.trim().toLowerCase() || 'audio';
         const title = parts.slice(2).join(" ") || 'Unknown Title';
         
-        const apiUrl = `https://api.princetechn.com/api/download/ytmp3?apikey=prince&url=${encodeURIComponent(url)}`;
+        const apiUrl = `https://api.princetechn.com/api/download/ytmp3?apikey=prince_api_56yjJ568dte4&url=${encodeURIComponent(url)}`;
         
         const response = await fetch(apiUrl);
         const result = await response.json();
@@ -500,7 +500,7 @@ cmd({
         }
 
         const response = await fetchJson(
-            `https://api.princetechn.com/api/download/facebookv2?apikey=prince&url=${encodeURIComponent(q)}`
+            `https://api.princetechn.com/api/download/facebookv2?apikey=prince_api_56yjJ568dte4&url=${encodeURIComponent(q)}`
         );
 
         const result = response?.result;
@@ -686,7 +686,7 @@ cmd({
 
         if (q.startsWith("http")) {
             await reply("⏳ *Fetching video info...*");
-            const res = await fetchJson(`https://api.princetechn.com/api/download/xnxxdl?apikey=prince&url=${encodeURIComponent(q)}`);
+            const res = await fetchJson(`https://api.princetechn.com/api/download/xnxxdl?apikey=prince_api_56yjJ568dte4&url=${encodeURIComponent(q)}`);
 
             if (!res?.success || !res?.result) {
                 return await reply("❌ Failed to fetch video. Check the URL and try again.");
@@ -780,7 +780,7 @@ cmd({
         if (!q) return await reply(notFoundMg);
 
         await reply("⏳ *Fetching video info...*");
-        const res = await fetchJson(`https://api.princetechn.com/api/download/xnxxdl?apikey=prince&url=${encodeURIComponent(q)}`);
+        const res = await fetchJson(`https://api.princetechn.com/api/download/xnxxdl?apikey=prince_api_56yjJ568dte4&url=${encodeURIComponent(q)}`);
 
         if (!res?.success || !res?.result) {
             return await reply("❌ Failed to fetch video.");
@@ -884,7 +884,7 @@ cmd({
 
         if (q.startsWith("http")) {
             await reply("⏳ *Fetching video info...*");
-            const res = await fetchJson(`https://api.princetechn.com/api/download/xvideosdl?apikey=prince&url=${encodeURIComponent(q)}`);
+            const res = await fetchJson(`https://api.princetechn.com/api/download/xvideosdl?apikey=prince_api_56yjJ568dte4&url=${encodeURIComponent(q)}`);
 
             if (!res?.success || !res?.result) {
                 return await reply("❌ Failed to fetch video. Check the URL and try again.");
@@ -956,7 +956,7 @@ cmd({
         if (!q) return await reply(notFoundMg);
 
         await reply("⏳ *Fetching video info...*");
-        const res = await fetchJson(`https://api.princetechn.com/api/download/xvideosdl?apikey=prince&url=${encodeURIComponent(q)}`);
+        const res = await fetchJson(`https://api.princetechn.com/api/download/xvideosdl?apikey=prince_api_56yjJ568dte4&url=${encodeURIComponent(q)}`);
 
         if (!res?.success || !res?.result) {
             return await reply("❌ Failed to fetch video.");
