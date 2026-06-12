@@ -3,7 +3,7 @@ const { cmd } = require("../command");
 const config = require("../config");
 const {fetchJson} = require("../lib/functions");
 
-const PRINCE_API_KEY = "prince";
+const PRINCE_API_KEY = "prince_api_56yjJ568dte4";
 const PRINCE_API_BASE = "https://api.princetechn.com/api/anime";
 
 // ============================= L A N G U A G E =============================
