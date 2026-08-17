@@ -287,7 +287,9 @@ cmd({
         console.error(error);
         await reply(errorMg, "❌");
     }
-});                                                      
+});
+
+
 cmd({
     pattern: "ytmp3_dl",    
     react: "⬇️",
@@ -310,7 +312,7 @@ cmd({
         const response = await fetch(apiUrl);
         const result = await response.json();
         
-        const downloadUrl = result?.result?.download_url;
+        const downloadUrl = result?.result?.downloadUrl;
             
         if(!downloadUrl){
             reply(downUrlNotfound, "⁉️");
