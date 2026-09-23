@@ -5,7 +5,8 @@ const fetch = require("node-fetch");
 const { cmd, commands } = require('../command');
 const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, getDateAndTime, tr, formatMessage} = require('../lib/functions');
 const si = require('systeminformation');
-const emojiRegex = require('emoji-regex');
+//const emojiRegex = require('emoji-regex');
+const emojiRegex = require('emoji-regex').default;
 const { storenumrepdata } = require('../lib/numreply-db');
 
 
