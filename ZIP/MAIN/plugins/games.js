@@ -2512,14 +2512,41 @@ const wordChainGames = new Map();
 
 // Validate word using dictionary API
 async function isValidWord(word) {
+  const clean = String(word || '').trim().toLowerCase();
+  if (!clean || !/^[a-z][a-z'-]*$/.test(clean)) return false;
+
+  // ── Primary: Datamuse (free, no key, super reliable) ──
   try {
-    const response = await axios.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`, {
-      timeout: 5000
+    const res = await axios.get('https://api.datamuse.com/words', {
+      params: { sp: clean, max: 1 },
+      timeout: 8000
     });
-    return response.status === 200 && Array.isArray(response.data) && response.data.length > 0;
-  } catch (e) {
-    // If API fails, use backup validation (basic check)
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      // Datamuse can return fuzzy results — require an exact match
+      return res.data[0].word.toLowerCase() === clean;
+    }
     return false;
+  } catch (e) {
+    // ── Fallback: Wiktionary Action API (page existence check) ──
+    try {
+      const res = await axios.get('https://en.wiktionary.org/w/api.php', {
+        params: {
+          action: 'query',
+          titles: clean,
+          format: 'json'
+        },
+        timeout: 8000,
+        headers: {
+          // Wikimedia requires a descriptive User-Agent
+          'User-Agent': 'PRINCE-MDX/4.5 (dictionary-validator)'
+        }
+      });
+      const pages = res.data?.query?.pages || {};
+      const first = Object.values(pages)[0];
+      return !!first && !('missing' in first);
+    } catch (_) {
+      return false;
+    }
   }
 }
 
