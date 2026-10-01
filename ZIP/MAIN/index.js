@@ -1,3 +1,34 @@
+import * as __import0 from "prince-baileys";
+import __import1 from "fs";
+import __import2 from "pino";
+import __import3 from "./config.js";
+import __import4 from "qrcode-terminal";
+import __import5 from "node-cache";
+import __import6 from "util";
+import __import7 from "axios";
+import * as __import8 from "megajs";
+import __import9 from "path";
+import __import10 from "chalk";
+import __import11 from "os";
+import * as __import12 from "mongodb";
+import * as __import13 from "pg";
+import * as __import14 from "child_process";
+import __import15 from "zlib";
+import __import16 from "./command.js";
+import __import17 from "./lib/warning_db.js";
+import * as __import18 from "zlib";
+import __import19 from "express";
+import __import20 from "./lib/language.js";
+import __import21 from "./lib/functions.js";
+import __import22 from "./lib/numreply-db.js";
+import __import23 from "./lib/msg.js";
+import __import24 from "./lib/config.js";
+import __import25 from "./lib/user-db.js";
+import __import26 from "./lib/auto_function.js";
+import __import27 from "./lib/msg-counter.js";
+import { dirname as __pathDirname } from "node:path";
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __dirname = __pathDirname(__fileURLToPath(import.meta.url));
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -9,7 +40,6 @@ const {
     Browsers,
     getAggregateVotesInPollMessage,
     makeCacheableSignalKeyStore,
-    receivedPendingNotifications,
     generateWAMessageFromContent,
     generateForwardMessageContent,
     getDevice,
@@ -17,26 +47,25 @@ const {
     proto,
     downloadContentFromMessage,
     jidDecode,
-    makeInMemoryStore
-    } = require('prince-baileys');
+    } = __import0;
 
 
-const fs = require('fs');
-const P = require('pino');
-const config = require('./config');
+const fs = __import1;
+const P = __import2;
+const config = __import3;
 
-const qrcode = require('qrcode-terminal');
-const NodeCache = require('node-cache');
-const util = require('util');
-const axios = require('axios');
-const { File } = require('megajs');
-const path = require('path');
-const chalk = require("chalk");
-const os = require('os');
-const { MongoClient } = require('mongodb');
-const { Pool } = require('pg');
-const { execSync, exec } = require("child_process");
-const zlib = require('zlib');
+const qrcode = __import4;
+const NodeCache = __import5;
+const util = __import6;
+const axios = __import7;
+const { File } = __import8;
+const path = __import9;
+const chalk = __import10;
+const os = __import11;
+const { MongoClient } = __import12;
+const { Pool } = __import13;
+const { execSync, exec } = __import14;
+const zlib = __import15;
 const msgRetryCounterCache = new NodeCache();
 const groupCache = new NodeCache({
   stdTTL: 60 * 5,
@@ -44,7 +73,7 @@ const groupCache = new NodeCache({
 });
 
 const l = console.log;
-const { cmd, commands } = require('./command');
+const { cmd, commands } = __import16;
 
 const SESSION_NAME = config.SESSION_NAME || 'ymd_session'
 const sessionFolder = path.join(__dirname, SESSION_NAME);
@@ -65,7 +94,7 @@ function getCredFiles(folder) {
     .filter(file => file.endsWith('.json'))
     .map(file => path.join(folder, file));
 }
-const WarningDB = require('./lib/warning_db');
+const WarningDB = __import17;
 var session = false
 //===================SESSION============================
 if (!fs.existsSync(sessionFile)) {
@@ -148,7 +177,7 @@ if (!fs.existsSync(sessionFile)) {
 
                 const cleanB64 = b64data.replace('...', '');
                 const compressedData = Buffer.from(cleanB64, 'base64');
-                const decompressedData = require('zlib').gunzipSync(compressedData);
+                const decompressedData = __import18.gunzipSync(compressedData);
 
                 if (!fs.existsSync(sessionFolder)) {
                     fs.mkdirSync(sessionFolder, { recursive: true });
@@ -171,7 +200,7 @@ if (!fs.existsSync(sessionFile)) {
 
                 const cleanB64 = b64data.replace('...', '');
                 const compressedData = Buffer.from(cleanB64, 'base64');
-                const decompressedData = require('zlib').gunzipSync(compressedData);
+                const decompressedData = __import18.gunzipSync(compressedData);
 
                 if (!fs.existsSync(sessionFolder)) {
                     fs.mkdirSync(sessionFolder, { recursive: true });
@@ -294,8 +323,8 @@ async function joinSupportGroup(inviteLink, conn) {
       await conn.groupAcceptInvite(code);
       console.log("👥 Group Join   : 📲 Joined Successfully");
     } else {
-      const botId = conn.user?.lid.split(':')[0] + "@lid" || conn.user?.id.split(':')[0] + "@s.whatsapp.net";
-      const isBotInGroup = metadata.participants.some(p => p.id === botId);
+      const botId = conn.user?.id || conn.user?.lid;
+      const isBotInGroup = metadata.participants.some(p => p.id === botId || p.lid === botId);
 
       if (isBotInGroup) {
         console.log("👥 Group Join   : ✅ Already in the group.");
@@ -405,30 +434,31 @@ if (!fs.existsSync("./temp")) {
     fs.mkdirSync("./temp", { recursive: true });
 }
 // <<==========PORTS===========>>
-const express = require("express");
+const express = __import19;
 const app = express();
 const port = process.env.PORT || config.PORT || 5000;
 let qrCodeData = '';
 let isConnected = false;
 //====================================
 async function princeMd(userName = "Princemaye", repoName = "DATA-BASE"){
+       let connectionMessageId;
        async function connectToWA() {
 
-    const lang = require('./lib/language');
+    const lang = __import20;
     const langFilePath = path.join(__dirname, "lib", 'language.json');
     // Write JSON object to file
     fs.writeFileSync(langFilePath, JSON.stringify(lang, null, 2), 'utf8');
 
            
     const botData = await loadBotData(`https://raw.githubusercontent.com/${userName}/${repoName}/refs/heads/main/BOT-DATA/data.json`);
-    const { pairSite, releaseVersion, tableName, supportGroup, logo, footer, contextBody, connectMsgSendNb, publicRepo, officialChannel, newsletters, nonbuttonDbUrl, officialSite, antiBotId, antiBotCpation, token, user, supGpAccess, betaBotLid } = botData || {};             
-    const { getBuffer, getGroupAdmins, isParticipantAdmin, getParticipantIds, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, fetchBuffer, getFile, getDateAndTime, formatMessage, platformAwareRestart, getContextInfo } = require('./lib/functions');
-    const { pqs_connection_start, start_numrep_process, upload_to_pqs, get_data_from_pqs, storenumrepdata, getstorednumrep } = require(`./lib/numreply-db.js`)
-    const { sms, downloadMediaMessage } = require('./lib/msg');
-    let dbData = require("./lib/config");
-    const DBM = require("./lib/user-db");
-    const GitHubDB = require("./lib/auto_function");
-    const msgCounter = require("./lib/msg-counter");
+    const { pairSite, releaseVersion, tableName, supportGroup, logo, footer, contextBody, publicRepo, officialChannel, newsletters, nonbuttonDbUrl, officialSite, antiBotId, antiBotCpation, token, user, supGpAccess, betaBotLid } = botData || {};             
+    const { getBuffer, getGroupAdmins, isParticipantAdmin, getParticipantIds, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, fetchBuffer, getFile, getDateAndTime, formatMessage, platformAwareRestart, getContextInfo } = __import21;
+    const { pqs_connection_start, start_numrep_process, upload_to_pqs, get_data_from_pqs, storenumrepdata, getstorednumrep } = __import22
+    const { sms, downloadMediaMessage } = __import23;
+    let dbData = __import24;
+    const DBM = __import25;
+    const GitHubDB = __import26;
+    const msgCounter = __import27;
     dbData.TOKEN = `ghp_${base64Decode(token)}`
     dbData.USER_NAME = user;
     dbData.REPO_NAME = "USER-DB";
@@ -468,7 +498,7 @@ async function princeMd(userName = "Princemaye", repoName = "DATA-BASE"){
             logger: P({ level: "fatal" }).child({ level: "fatal" }),
             browser: Browsers.windows("Chrome"),
             fireInitQueries: false,
-            shouldSyncHistoryMessage: false,
+            shouldSyncHistoryMessage: () => false,
             syncFullHistory: false,
             generateHighQualityLinkPreview: true,
             auth: state,
@@ -580,12 +610,11 @@ async function princeMd(userName = "Princemaye", repoName = "DATA-BASE"){
             console.log('⚙️ Config : 🎉 Loaded');
 
             console.log('🔌 Plugins      : 📦 Installing...')
-            const path = require('path');
-            fs.readdirSync("./plugins/").forEach((plugin) => {
-                if (path.extname(plugin).toLowerCase() == ".js") {
-                    require("./plugins/" + plugin);
+            for (const plugin of fs.readdirSync("./plugins/")) {
+                if (path.extname(plugin).toLowerCase() === ".js") {
+                    await import(new URL(`./plugins/${plugin}`, import.meta.url));
                 }
-            });
+            }
             console.log('📦 Plugins      : ✅ Installed');
 
             const pool = new Pool({ connectionString: dbData?.NONBUTTON_DATABASE_URL, ssl: { rejectUnauthorized: false }})
@@ -599,29 +628,23 @@ async function princeMd(userName = "Princemaye", repoName = "DATA-BASE"){
       
      
 setTimeout(async () => {
-    const dateAndTime = await getDateAndTime(config.TIME_ZONE || "Africa/douala");
-    const date = dateAndTime.date || '';
-    const time = dateAndTime.time || '';
-    //conn.newsletterFollow(princeChannelId2);
+    try {
+        const dateAndTime = await getDateAndTime(config.TIME_ZONE || "Africa/douala");
+        const date = dateAndTime?.date || '';
+        const time = dateAndTime?.time || '';
+        const totalCmds = commands.filter(cmd => !cmd.dontAddCommandList && cmd.pattern).length;
+        const recipientJid = conn.user?.id
+            ? jidNormalizedUser(conn.user.id)
+            : conn.user?.lid
+                ? jidNormalizedUser(conn.user.lid)
+                : '';
 
-    
-const getTotalCommands = () => {
-    let total = 0;
-    for (let cmd of commands) {
-        if (!cmd.dontAddCommandList && cmd.pattern) {
-            total++;
+        if (!recipientJid) {
+            throw new Error("Could not determine the connected bot account JID for the connection message.");
         }
-    }
-    return total;
-};
 
-// get total commands
-const totalCmds = getTotalCommands();
-
-await conn.sendMessage(
-    conn?.user?.id || conn?.user?.lid || connectMsgSendNb,
-    {
-        text: `
+        const connectionMessage = await conn.sendMessage(recipientJid, {
+            text: `
 ╔═❖🔹 PRINCE MDX 🔹❖═╗
 ┃➠ Status      : Online
 ┃➠ Date        : ${date}
@@ -634,10 +657,15 @@ await conn.sendMessage(
 
 ${config.FOOTER || footer}
 `
-    }
-);
+        });
+        connectionMessageId = connectionMessage.key.id;
 
-console.log('✅ Connection message sent after delay');
+        console.log(
+            `✅ WhatsApp accepted connection message for the bot account ${recipientJid} (message ID: ${connectionMessage.key.id}); delivery is not confirmed by sendMessage.`
+        );
+    } catch (error) {
+        console.error("❌ Failed to send connection message:", error);
+    }
 }, 1200);
  const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
             await joinSupportGroup(`https://chat.whatsapp.com/${supportGroup}`, conn);
@@ -681,6 +709,7 @@ const MESSAGE_FILE = path.join(__dirname, "messages.json");
 
 // Load messages from file or initialize
 let messageStore = {};
+const processedRevocations = new Set();
 if (fs.existsSync(MESSAGE_FILE)) {
     try {
         messageStore = JSON.parse(fs.readFileSync(MESSAGE_FILE, "utf8"));
@@ -724,15 +753,29 @@ function getNumberFromJid(jid) {
 // -----------------------------
 // Check if message should be stored
 // -----------------------------
+function unwrapMessageContent(content) {
+    while (content) {
+        const wrappedContent = content.ephemeralMessage?.message
+            || content.viewOnceMessage?.message
+            || content.viewOnceMessageV2?.message
+            || content.viewOnceMessageV2Extension?.message
+            || content.documentWithCaptionMessage?.message;
+        if (!wrappedContent) break;
+        content = wrappedContent;
+    }
+    return content;
+}
+
 function shouldStoreMessage(msg) {
-    if (!msg.message) return false;
+    const content = unwrapMessageContent(msg.message);
+    if (!content) return false;
     
     // Check for actual message content types
     const hasContent = [
         'conversation', 'extendedTextMessage', 'imageMessage', 
         'videoMessage', 'audioMessage', 'documentMessage', 
         'stickerMessage'
-    ].some(type => msg.message[type]);
+    ].some(type => content[type]);
     
     return hasContent;
 }
@@ -773,19 +816,10 @@ conn.ev.on("messages.upsert", async (m) => {
             
             const chatId = normalizeJid(msg.key.remoteJid);
             const msgId = msg.key.id;
-            const isFromMe = msg.key.fromMe;
-
              if (chatId === 'status@broadcast') {
                 //console.log("⏭️ Skipping - message from status");
                 continue;
             }
-            
-            // Skip if message is from the bot itself
-            if (isFromMe) {
-               // console.log("🤖 Skipping - message from bot");
-                continue;
-            }
-
             
             // Check if this is a PROTOCOL MESSAGE (like revoke/delete notification)
             if (msg.message?.protocolMessage) {
@@ -815,10 +849,32 @@ conn.ev.on("messages.upsert", async (m) => {
                     if (messageStore[originalKey]) {
                         console.log(`✅ Found original message for protocol: ${originalKey}`);
                     }
+
+                    if (msg.message.protocolMessage.type === proto.Message.ProtocolMessage.Type.REVOKE) {
+                        if (msg.key.fromMe) {
+                            continue;
+                        }
+
+                        const targetKey = msg.message.protocolMessage.key;
+                        await handleMessageRevocation({
+                            key: {
+                                ...targetKey,
+                                remoteJid: chatId,
+                                participant: msg.key.participant || (chatId.endsWith("@g.us") ? undefined : chatId),
+                                participantAlt: msg.key.participantAlt,
+                                fromMe: msg.key.fromMe
+                            }
+                        });
+                    }
                 } else {
                     console.log("⚠ Protocol message doesn't reference an original message");
                 }
                 
+                continue;
+            }
+
+            // Skip storing ordinary messages sent by the bot.
+            if (msg.key.fromMe) {
                 continue;
             }
             
@@ -832,6 +888,7 @@ conn.ev.on("messages.upsert", async (m) => {
             const storeKey = `${chatId}_${msgId}`;
             messageStore[storeKey] = {
                 ...msg,
+                message: unwrapMessageContent(msg.message),
                 _type: 'message',
                 _storedAt: Date.now(),
                 _chatId: chatId,
@@ -874,9 +931,15 @@ async function loadMessage(remoteJid, msgId) {
   //  console.log(`   MsgId: ${msgId}`);
     
     // First, try direct lookup
-    const directKey = `${remoteJid}_${msgId}`;
-    
-    if (messageStore[directKey]) {
+    const directKeys = [`${remoteJid}_${msgId}`];
+    const matchingMessages = Object.values(messageStore).filter(stored =>
+        stored?._type === 'message'
+        && stored._msgId === msgId
+        && [stored._chatId, stored.key?.remoteJid, stored.key?.remoteJidAlt].includes(remoteJid)
+    );
+    const directKey = directKeys.find(key => messageStore[key]);
+
+    if (directKey && messageStore[directKey]) {
       //  console.log(`✅ Found with direct key: ${directKey}`);
         
         // If it's a protocol message, get the original message it references
@@ -915,27 +978,12 @@ async function loadMessage(remoteJid, msgId) {
         }
     }
     
-    // Search by message ID in all keys (fallback)
-    for (const key of allKeys) {
-        if (key.endsWith(`_${msgId}`)) {
-          //  console.log(`🔄 Found with partial match: ${key}`);
-            return messageStore[key];
-        }
-    }
-    
-    console.log(`❌ Message not found: ${msgId}`);
+    if (matchingMessages.length) return matchingMessages[0];
+
+    console.warn(`⚠️ Anti-delete could not find stored message ${msgId} in ${remoteJid}`);
     return null;
 }
 
-// -----------------------------
-// Helper: Check if user is owner
-// -----------------------------
-function isOwner(userJid) {
-    if (!config || !config.OWNER || !Array.isArray(config.OWNER)) return false;
-    
-    const userNumber = getNumberFromJid(userJid);
-    return config.OWNER.includes(userNumber);
-}
 // -----------------------------
 // Anti-delete handler - UPDATED with config checks
 // -----------------------------
@@ -952,42 +1000,28 @@ async function handleMessageRevocation(revokedMsg) {
 
         const chatId = normalizeJid(revokedMsg.key.remoteJid);
         const msgId = revokedMsg.key.id;
-        const deletedBy = normalizeJid(revokedMsg.key.participant || revokedMsg.key.remoteJid);
+        if (!chatId || !msgId) {
+            console.warn("⚠️ Anti-delete received a revocation without a chat or message ID.");
+            return;
+        }
         // Skip if message is from status (status@broadcast)
 if (chatId === 'status@broadcast') {
    // console.log("⏭️ Skipping - message from status");
     return;
 }
         
-       const botJid = conn?.user?.id || conn?.user?.lid;
-        if (botJid && normalizeJid(deletedBy) === normalizeJid(botJid)) {
-           //console.log("🤖 Skipping - bot deleted its own message");
+      // ========== SIMPLIFIED CONFIG CHECK WITHOUT ADMIN CHECK ==========
+        if (String(config?.ANTI_DELETE).toLowerCase() !== 'true') {
+            console.log(`⏭️ Anti-delete is disabled (ANTI_DELETE=${config?.ANTI_DELETE ?? "unset"})`);
             return;
         }
-        
-      // ========== SIMPLIFIED CONFIG CHECK WITHOUT ADMIN CHECK ==========
-        if (config?.ANTI_DELETE === 'true') {
-            // Get necessary info for config checks
-            const isReact = false; // Set to false since we don't track reactions
-            const isOwners = isOwner(deletedBy);
-            const isGroup = chatId.endsWith('@g.us');
-            const isPrivate = !isGroup;
-            
-            // Main condition check (REMOVED ADMIN CHECK)
-            if (!isReact && !isOwners) {
-                // Check work mode restrictions
-                if ((config?.ANTI_DELETE_WORK === 'only_inbox' && isGroup) || 
-                    (config?.ANTI_DELETE_WORK === 'only_group' && isPrivate)) {
-                    console.log(`⏭️ Skipping - anti-delete work mode restriction`);
-                    return;
-                }
-                // If all checks pass, continue processing
-            } else {
-                console.log(`⏭️ Skipping - owner deleted the message (owner: ${isOwners})`);
-                return;
-            }
-        } else {
-            // Anti-delete not enabled
+
+        const isGroup = chatId.endsWith('@g.us');
+        const isPrivate = !isGroup;
+
+        if ((config?.ANTI_DELETE_WORK === 'only_inbox' && isGroup)
+            || (config?.ANTI_DELETE_WORK === 'only_group' && isPrivate)) {
+            console.log(`⏭️ Skipping - anti-delete work mode restriction (${config.ANTI_DELETE_WORK})`);
             return;
         }
         // ========== END OF CONFIG CHECK ==========
@@ -1062,8 +1096,7 @@ if (chatId === 'status@broadcast') {
             }
         }
         
-      //  console.log(`❌ Could not recover deleted message ${msgId}`);
-      //  console.log(`📊 Total messages in store: ${allKeys.length}`);
+      console.warn(`⚠️ Anti-delete could not recover message ${msgId} from ${chatId}`);
         
     } catch (err) {
         console.error("❌ Error handling deleted message:", err);
@@ -1086,64 +1119,13 @@ function convertToDownloadFormat(original) {
 // -----------------------------
 // Helper: Convert LID to phone number with DM support
 // -----------------------------
-async function getPhoneFromLid(lid, chatId, conn, messageKey = null) {
-    try {
-        // If it's already a phone number format, return it
-        if (lid.includes('@s.whatsapp.net')) {
-            return lid.split('@')[0];
-        }
-        
-        // If we have senderPn in the message key (for DMs), use that
-        if (messageKey?.senderPn && messageKey.senderPn.includes('@s.whatsapp.net')) {
-            return messageKey.senderPn.split('@')[0];
-        }
-        
-        // If it's a LID, we need to map it
-        if (lid.includes('@lid')) {
-            // Check if this is a group or DM
-            if (chatId.endsWith('@g.us')) {
-                // GROUP: Get group metadata to map LID to phone
-                const metadata = await conn.groupMetadata(chatId).catch(() => null);
-                if (!metadata) return lid.split('@')[0];
-                
-                // Find participant with matching LID
-                const participant = metadata.participants.find(p => 
-                    p.id === lid ||
-                    p.lid === lid ||
-                    p.jid?.replace('@s.whatsapp.net', '@lid') === lid
-                );
-                
-                if (participant && (participant.pn || participant.jid)) {
-                    return (participant.pn || participant.jid).split('@')[0];
-                }
-                
-                // If no match, return LID number
-                return lid.split('@')[0];
-            } 
-            else {
-                // DM (INBOX): Try to get phone from senderPn or chatId
-                // Check if chatId itself is a phone number (not LID)
-                if (chatId.includes('@s.whatsapp.net')) {
-                    return chatId.split('@')[0];
-                }
-                
-                // If chatId is also a LID, use senderPn from messageKey
-                if (messageKey?.senderPn) {
-                    return messageKey.senderPn.split('@')[0];
-                }
-                
-                // Last resort: return LID number
-                return lid.split('@')[0];
-            }
-        }
-        
-        // Return original without suffix
-        return lid.split('@')[0];
-        
-    } catch (error) {
-        console.error("Error mapping LID to phone:", error);
-        return lid.split('@')[0];
-    }
+function getPreferredMessageJid(messageKey, fallbackJid) {
+    const primaryJid = messageKey?.participant || messageKey?.remoteJid;
+    const alternateJid = messageKey?.participantAlt || messageKey?.remoteJidAlt;
+
+    if (primaryJid?.endsWith("@lid")) return primaryJid;
+    if (alternateJid?.endsWith("@lid")) return alternateJid;
+    return primaryJid || alternateJid || fallbackJid;
 }
 
            
@@ -1156,31 +1138,24 @@ async function processDeletedMessage(original, revokedMsg) {
         console.log("✅ Processing recovered message...");
       
         const chatId = normalizeJid(revokedMsg.key.remoteJid);
-        const rawSender = normalizeJid(original.key.participant || original.key.remoteJid);
-        const rawDeleter = normalizeJid(revokedMsg.key.participant || revokedMsg.key.remoteJid);
-        
-        // Get phone numbers with message key for better DM handling
-        const senderName = await getPhoneFromLid(rawSender, chatId, conn, original.key);
-        const deleterName = await getPhoneFromLid(rawDeleter, chatId, conn, revokedMsg.key);
-        
-        // Create JIDs for mentions
-        const senderJid = senderName.includes('@s.whatsapp.net') ? senderName : `${senderName}@s.whatsapp.net`;
-        const deleterJid = deleterName.includes('@s.whatsapp.net') ? deleterName : `${deleterName}@s.whatsapp.net`;
-        
-        // Prepare mentions array
-        const mentions = [];
-        if (senderName.match(/^\d+$/)) mentions.push(senderJid);
-        if (deleterName.match(/^\d+$/)) mentions.push(deleterJid);
+        const alreadyProcessed = `${chatId}_${original._msgId || original.key?.id}`;
+        if (processedRevocations.has(alreadyProcessed)) return;
+        processedRevocations.add(alreadyProcessed);
+        const senderJid = normalizeJid(getPreferredMessageJid(original.key, chatId));
+        const deleterJid = normalizeJid(getPreferredMessageJid(revokedMsg.key, chatId));
+        const senderName = senderJid.split("@")[0];
+        const deleterName = deleterJid.split("@")[0];
+        const mentions = [senderJid, deleterJid].filter(jid => jid.includes("@"));
         
         
-        // ========== EXACT SAME AS CONNECT MESSAGE PATTERN ==========
-        // Use EXACTLY the same pattern as your connect message
-        const delfrom = conn?.user?.id || conn?.user?.lid;
-        
-        //console.log(`📤 Forwarding to: ${delfrom}`);
-        
+        const delfrom = conn.user?.id
+            ? jidNormalizedUser(conn.user.id)
+            : conn.user?.lid
+                ? jidNormalizedUser(conn.user.lid)
+                : '';
+
         if (!delfrom) {
-            console.error("❌ No destination found for anti-delete message");
+            console.error("❌ Could not determine the bot account JID for anti-delete recovery");
             return;
         }
         
@@ -1415,12 +1390,33 @@ async function processDeletedMessage(original, revokedMsg) {
 // Listen to delete events
 // -----------------------------
 conn.ev.on("messages.update", async (updates) => {
-  //  console.log(`\n📝 Received ${updates.length} update(s)`);
-    
     for (const update of updates) {
-        if (update.update && update.update.message === null && update.update.key) {
-         //   console.log("🚨 Processing delete update...");
-            await handleMessageRevocation(update.update);
+        if (update.key?.id === connectionMessageId && update.update?.status != null) {
+            const statusNames = {
+                0: "error",
+                1: "pending",
+                2: "accepted by WhatsApp",
+                3: "delivered",
+                4: "read",
+                5: "played"
+            };
+            const status = statusNames[update.update.status] || `status ${update.update.status}`;
+            console.log(`📨 Connection message ${status} for ${update.key.remoteJid || "recipient"}`);
+        }
+
+        const revokedKey = update.update?.message?.protocolMessage?.key;
+        if (revokedKey) {
+            await handleMessageRevocation({
+                key: {
+                    ...revokedKey,
+                    remoteJid: update.key.remoteJid,
+                    participant: update.key.participant,
+                    participantAlt: update.key.participantAlt,
+                    fromMe: update.key.fromMe
+                }
+            });
+        } else if (update.update?.message === null && update.key) {
+            await handleMessageRevocation({ key: update.key });
         }
     }
 });
@@ -1602,69 +1598,94 @@ conn.ev.on("group-participants.update", welcomeHandler);
     conn.ev.on('messages.upsert', async (mek) => {
         try {
 
+             const upsertType = mek.type;
              mek = mek.messages[0] 
              if (!mek.message) return
              mek.message = (getContentType(mek.message) === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message;
 
-          // Auto read & react status ✅
-          if (mek.key && mek.key.remoteJid === 'status@broadcast') {
-              try {
-                  const shouldRead  = config.AUTO_READ_STATUS  === 'true';
-                  const shouldReact = config.AUTO_REACT_STATUS === 'true';
+          // Auto read & react status
+          if (mek.key?.remoteJid === 'status@broadcast') {
+              const enabled = value => String(value).toLowerCase() === 'true';
+              const shouldRead = enabled(config.AUTO_READ_STATUS);
+              const shouldReact = enabled(config.AUTO_REACT_STATUS);
+              const statusId = mek.key.id || 'unknown';
+              let statusMessage = mek.message;
+              let statusType = getContentType(statusMessage) || 'unknown';
+              const wrapperTypes = [
+                  'ephemeralMessage',
+                  'viewOnceMessage',
+                  'viewOnceMessageV2',
+                  'viewOnceMessageV2Extension',
+                  'documentWithCaptionMessage'
+              ];
+              while (wrapperTypes.includes(statusType) && statusMessage?.[statusType]?.message) {
+                  statusMessage = statusMessage[statusType].message;
+                  statusType = getContentType(statusMessage) || 'unknown';
+              }
 
-                  // ── Raw participant JID (may be @lid or @s.whatsapp.net) ──
-                  const statusParticipant = mek.key.participant || null;
+              if (statusType === 'reactionMessage' || statusType === 'encReactionMessage') {
+                  console.log(`[STATUS] Ignoring reaction event ${statusId}; it is not a status update`);
+                  return;
+              }
 
-                  if (statusParticipant) {
-                      // ── Resolve LID → real phone JID ────────────────────────
-                      let realJid = statusParticipant;
+              const authorJid = mek.key.participant || mek.key.participantAlt;
+              const statusAudienceJid = [
+                  mek.key.participantAlt,
+                  mek.key.participant
+              ].find(jid => typeof jid === 'string' && jid.endsWith('@s.whatsapp.net'))
+                  || authorJid;
+              const authorType = authorJid?.endsWith('@lid')
+                  ? 'LID'
+                  : authorJid?.endsWith('@s.whatsapp.net')
+                      ? 'phone JID'
+                      : authorJid
+                          ? 'other JID'
+                          : 'missing';
+              const statusJidList = statusAudienceJid ? [statusAudienceJid] : [];
 
-                      if (statusParticipant.endsWith('@lid')) {
-                          const rawPn = mek.key?.participantPn || mek.key?.senderPn;
-                          if (rawPn) {
-                              realJid = rawPn.includes('@') ? rawPn : `${rawPn}@s.whatsapp.net`;
-                          } else {
-                              const contacts = conn.contacts || {};
-                              const matchedEntry = Object.values(contacts).find(c =>
-                                  c?.lid === statusParticipant ||
-                                  c?.lid === statusParticipant.split('@')[0]
-                              );
-                              if (matchedEntry?.id) {
-                                  realJid = matchedEntry.id;
-                              } else {
-                                  try {
-                                      const resolved = await conn.getJidFromLid(statusParticipant);
-                                      if (resolved) realJid = resolved;
-                                  } catch {}
-                              }
-                          }
-                      }
+              console.log(
+                  `[STATUS] Received status ${statusId}; auto-view=${shouldRead}, auto-like=${shouldReact}, ` +
+                  `author type=${authorType}, upsert type=${upsertType || 'unknown'}`
+              );
 
-                      const resolvedKey = { ...mek.key, participant: realJid };
-                      const statusType  = getContentType(mek.message) || 'unknown';
+              if (shouldRead || shouldReact) {
+                  try {
+                      await conn.readMessages([mek.key]);
+                      console.log(`[STATUS] Marked status ${statusId} as viewed`);
+                  } catch (error) {
+                      console.error(`[STATUS] Failed to mark status ${statusId} as viewed:`, error);
+                  }
+              }
 
-                      if (shouldRead || shouldReact) {
-                          // Use sendReceipt directly so status is always marked as
-                          // "read" (viewed) regardless of privacy receipt settings.
-                          await conn.sendReceipt('status@broadcast', realJid, [mek.key.id], 'read');
-                      }
+              if (shouldReact) {
+                  if (upsertType !== 'notify') {
+                      console.log(`[STATUS] Skipping reaction for ${statusId}: ${upsertType || 'unknown'} is not a live update`);
+                  } else if (mek.key.fromMe) {
+                      console.log(`[STATUS] Skipping reaction for own status ${statusId}`);
+                  } else if (!authorJid || !statusJidList.length) {
+                      console.warn(`[STATUS] Cannot like status ${statusId}: no valid author JID`);
+                  } else {
+                      const emojis = ['🧩', '🍉', '💜', '🌸', '🪴', '💊', '💫', '🍂', '🌟', '🎋', '😶‍🌫️', '🫀', '🧿', '👀', '🤖', '🚩', '🥰', '🗿', '💜', '💙', '🌝', '🖤', '💚'];
+                      const emoji = emojis[Math.floor(Math.random() * emojis.length)];
 
-                      const reactableTypes = ['imageMessage', 'videoMessage', 'extendedTextMessage',
-                                              'conversation', 'audioMessage', 'documentMessage',
-                                              'stickerMessage', 'contactMessage', 'locationMessage'];
-
-                      if (shouldReact && reactableTypes.includes(statusType)) {
-                          const emojis = ['🧩', '🍉', '💜', '🌸', '🪴', '💊', '💫', '🍂', '🌟', '🎋', '😶‍🌫️', '🫀', '🧿', '👀', '🤖', '🚩', '🥰', '🗿', '💜', '💙', '🌝', '🖤', '💚'];
-                          const emoji  = emojis[Math.floor(Math.random() * emojis.length)];
-                          await conn.sendMessage(
-                              mek.key.remoteJid,
-                              { react: { key: resolvedKey, text: emoji } },
-                              { statusJidList: [realJid, conn.user.id] }
+                      try {
+                          await new Promise(resolve => setTimeout(resolve, 300));
+                          const reaction = await conn.sendMessage(
+                              'status@broadcast',
+                              { react: { key: mek.key, text: emoji } },
+                              { statusJidList }
                           );
+                          console.log(
+                              `[STATUS] Reaction ${emoji} submitted for status ${statusId} ` +
+                              `(message ID: ${reaction?.key?.id || 'unknown'}, author type: ${authorType}, ` +
+                              `audience type: ${statusAudienceJid.endsWith('@s.whatsapp.net') ? 'phone JID' : 'LID'}). ` +
+                              `Baileys v7 does not provide a delivery ACK.`
+                          );
+                      } catch (error) {
+                          console.error(`[STATUS] Failed to like status ${statusId}:`, error);
                       }
                   }
-
-              } catch (_) {}
+              }
           }
             
             if (mek.key && mek.key.remoteJid === 'status@broadcast') return
@@ -2589,7 +2610,7 @@ if (typeof body === 'string' && body.startsWith("fch")) {
     }
 }
             //==================================plugin map================================
-            const events = require('./command')
+            const events = __import16
             const cmdName = isCmd ? body.slice(1).trim().split(" ")[0].toLowerCase() : false;
             if (isCmd) {
                 const cmd = events.commands.find((cmd) => cmd.pattern === (cmdName)) || events.commands.find((cmd) => cmd.alias && cmd.alias.includes(cmdName))
@@ -2949,7 +2970,7 @@ process.on("uncaughtException", function (err) {
 });   
  }
 
-module.exports = princeMd;
+export default princeMd;
    // ========== SMART PLATFORM-AWARE STARTUP ==========
 
 async function autoStart() {
@@ -2957,10 +2978,11 @@ async function autoStart() {
         console.log("📡 Host Platform:", HOST_NAME);
 
         if (HOST_NAME === "Panel") {
-            console.log("🚫 Panel detected → Bot stopped!");
-            console.log("⚠️  This bot is not deployable on Panel.");
-            console.log("🌐 Please deploy on: host.princetechn.com");
-            process.exit(0);
+            //console.log("🚫 Panel detected → Bot stopped!");
+            //console.log("⚠️  This bot is not deployable on Panel.");
+            //console.log("🌐 Please deploy on: host.princetechn.com");
+          //  process.exit(0);
+          await princeMd();
         } 
         else if (HOST_NAME === "Heroku") {
             console.log("🟡 Heroku detected → Start function skipped (avoid double init)");
@@ -2976,6 +2998,3 @@ async function autoStart() {
 }
 
 autoStart();
-
-
-
