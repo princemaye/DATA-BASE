@@ -2978,11 +2978,11 @@ async function autoStart() {
         console.log("📡 Host Platform:", HOST_NAME);
 
         if (HOST_NAME === "Panel") {
-            //console.log("🚫 Panel detected → Bot stopped!");
-            //console.log("⚠️  This bot is not deployable on Panel.");
-            //console.log("🌐 Please deploy on: host.princetechn.com");
-          //  process.exit(0);
-          await princeMd();
+            console.log("🚫 Panel detected → Bot stopped!");
+            console.log("⚠️  This bot is not deployable on Panel.");
+            console.log("🌐 Please deploy on: host.princetechn.com");
+            process.exit(0);
+          
         } 
         else if (HOST_NAME === "Heroku") {
             console.log("🟡 Heroku detected → Start function skipped (avoid double init)");
