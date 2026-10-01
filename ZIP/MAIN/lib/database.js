@@ -1,7 +1,7 @@
 import * as __import0 from "mongodb";
-import __import1 from "../config.js";
+import * as configModule from "../config.js";
 const { MongoClient, ObjectId } = __import0;
-const config = __import1;
+const config = configModule.default ?? configModule.config ?? configModule;
 const dbName = "config_db";
 let db;
 

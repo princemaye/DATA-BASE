@@ -1,7 +1,7 @@
 import * as __import0 from "@octokit/rest";
-import __import1 from "../config.js";
+import * as configModule from "../config.js";
 const { Octokit } = __import0;
-const config = __import1;
+const config = configModule.default ?? configModule.config ?? configModule;
 let inputConfig = {
   ANTI_LINK: [],
   ANTI_BOT: [],
