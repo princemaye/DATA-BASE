@@ -1,7 +1,7 @@
 import * as __import0 from "prince-baileys";
 import __import1 from "fs";
 import __import2 from "pino";
-import __import3 from "./config.js";
+import * as configModule from "./config.js";
 import __import4 from "qrcode-terminal";
 import __import5 from "node-cache";
 import __import6 from "util";
@@ -52,7 +52,7 @@ const {
 
 const fs = __import1;
 const P = __import2;
-const config = __import3;
+const config = configModule.default ?? configModule.config ?? configModule;
 
 const qrcode = __import4;
 const NodeCache = __import5;
@@ -2978,11 +2978,11 @@ async function autoStart() {
         console.log("📡 Host Platform:", HOST_NAME);
 
         if (HOST_NAME === "Panel") {
-            console.log("🚫 Panel detected → Bot stopped!");
-            console.log("⚠️  This bot is not deployable on Panel.");
-            console.log("🌐 Please deploy on: host.princetechn.com");
-            process.exit(0);
-          
+            //console.log("🚫 Panel detected → Bot stopped!");
+            //console.log("⚠️  This bot is not deployable on Panel.");
+            //console.log("🌐 Please deploy on: host.princetechn.com");
+          //  process.exit(0);
+          await princeMd();
         } 
         else if (HOST_NAME === "Heroku") {
             console.log("🟡 Heroku detected → Start function skipped (avoid double init)");
