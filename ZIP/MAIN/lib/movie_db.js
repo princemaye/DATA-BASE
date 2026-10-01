@@ -1,5 +1,10 @@
-const fs = require("fs");
-const path = require("path");
+import __import0 from "fs";
+import __import1 from "path";
+import { dirname as __pathDirname } from "node:path";
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __dirname = __pathDirname(__fileURLToPath(import.meta.url));
+const fs = __import0;
+const path = __import1;
 
 const dbPath = path.join(__dirname, "movie-db.json");
 
@@ -41,4 +46,4 @@ async function resetMovie() {
   return defaultData;
 }
 
-module.exports = { inputMovie, getMovie, resetMovie };
+export default { inputMovie, getMovie, resetMovie };

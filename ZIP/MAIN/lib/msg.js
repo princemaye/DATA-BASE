@@ -1,9 +1,11 @@
+import * as __import0 from "prince-baileys";
+import __import1 from "fs";
 const {
     proto,
     downloadContentFromMessage,
     getContentType
-} = require('prince-baileys')
-const fs = require('fs')
+} = __import0
+const fs = __import1
 
 
 const downloadMediaMessage = async (m, filename) => {
@@ -216,7 +218,7 @@ const sms = (conn, m) => {
     return m
 }
 
-module.exports = {
+export default {
     sms,
     downloadMediaMessage
 }

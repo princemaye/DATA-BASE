@@ -1,3 +1,8 @@
+import __import0 from "fs";
+import __import1 from "path";
+import * as __import2 from "googleapis";
+import * as __import3 from "uuid";
+import { fileURLToPath } from "node:url";
 /*
   youtube_upload.js
   - Node.js helper to upload a quoted WhatsApp video (m.quoted.download()) to YouTube
@@ -16,10 +21,10 @@
     - privacy can be 'public' | 'unlisted' | 'private'
 */
 
-const fs = require('fs');
-const path = require('path');
-const { google } = require('googleapis');
-const { v4: uuidv4 } = require('uuid');
+const fs = __import0;
+const path = __import1;
+const { google } = __import2;
+const { v4: uuidv4 } = __import3;
 
 const SCOPES = ['https://www.googleapis.com/auth/youtube.upload'];
 const CRED_PATH = path.resolve(process.cwd(), 'credentials.json');
@@ -180,20 +185,19 @@ function detectExtensionFromMime(mime) {
 // node youtube_upload.js --get-token CODE
 // node youtube_upload.js --example
 
-if (require.main === module) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   // quick CLI helpers
   const argv = process.argv.slice(2);
   if (argv[0] === '--get-token' && argv[1]) {
     getAndSaveToken(argv[1]).catch(console.error);
-    return;
   }
 
   if (argv[0] === '--example') {
     console.log('Example run not provided here because this file expects a WhatsApp `m` object from your bot.');
     console.log('Use the exported uploadQuotedVideo() in your message handler:');
-    console.log(`\nconst { uploadQuotedVideo } = require('./youtube_upload');\n// inside your handler async function onMessage(m) { if (m.quoted) await uploadQuotedVideo(m, { title: 'My Title', description: 'desc', privacy: 'private', publishAt: '2025-10-05T12:00:00Z' }); }`);
-    return;
+    console.log(`\nimport { uploadQuotedVideo } from './youtube.js';\n// inside your handler async function onMessage(m) { if (m.quoted) await uploadQuotedVideo(m, { title: 'My Title', description: 'desc', privacy: 'private', publishAt: '2025-10-05T12:00:00Z' }); }`);
   }
 }
 
-module.exports = { getOAuth2Client, uploadQuotedVideo };
+export { getOAuth2Client, uploadQuotedVideo };
+export default { getOAuth2Client, uploadQuotedVideo };

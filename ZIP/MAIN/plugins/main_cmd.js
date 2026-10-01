@@ -1,25 +1,40 @@
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "../config.js";
+import __import1 from "os";
+import __import2 from "node-fetch";
+import __import3 from "../command.js";
+import __import4 from "../lib/functions.js";
+import __import5 from "systeminformation";
+import * as __import6 from "emoji-regex";
+import __import7 from "../lib/numreply-db.js";
+import __import8 from "../lib/database.js";
+import __import9 from "../lib/config.js";
+import __import10 from "../lib/fonts.js";
+import __import11 from "../lib/language.json" with { type: 'json' };
+import __import12 from "../package.json" with { type: 'json' };
+import __import13 from "axios";
 // ============================= R E Q U E S T =============================
-const config = require('../config');
-const os = require('os');
-const fetch = require("node-fetch");
-const { cmd, commands } = require('../command');
-const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, getDateAndTime, tr, formatMessage} = require('../lib/functions');
-const si = require('systeminformation');
-//const emojiRegex = require('emoji-regex');
-const emojiRegex = require('emoji-regex').default;
-const { storenumrepdata } = require('../lib/numreply-db');
+const config = __import0;
+const os = __import1;
+const fetch = __import2;
+const { cmd, commands } = __import3;
+const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, getDateAndTime, tr, formatMessage} = __import4;
+const si = __import5;
+const emojiRegex = __import6.default;
+const { storenumrepdata } = __import7;
 
 
-const DBM = require("../lib/database");
-const dbData = require("../lib/config");
+const DBM = __import8;
+const dbData = __import9;
 const ymd_db = new DBM();
 const botName = config.BOT_NAME && config.BOT_NAME !== "default" ? config.BOT_NAME : null;
 
 // ============================= C U S T O M   F O N T S =============================
-const { toSmallCaps, toBold } = require('../lib/fonts');
+const { toSmallCaps, toBold } = __import10;
 
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import11;
 var LANG = config.LANG === 'EN' ? 'EN' 
          : config.LANG === 'FR' ? 'FR' 
          : 'EN';
@@ -53,23 +68,9 @@ cmd({
         return `${h}h ${m}m ${sec}s`;
       };
 
-      let resolvedJid = (m.key.participantPn || sender || '').replace(/:.*@/, '@');
-
-      if (resolvedJid.endsWith('@lid') && isGroup) {
-          try {
-              const groupMeta = await conn.groupMetadata(from);
-              const participant = groupMeta.participants.find(p => p.id === resolvedJid || p.lid === resolvedJid);
-              if (participant && (participant.pn || participant.jid)) {
-                  resolvedJid = participant.pn || participant.jid;
-              }
-          } catch {}
-      }
-
-      if (resolvedJid.endsWith('@lid') && !isGroup) {
-          if (from.includes('@s.whatsapp.net')) {
-              resolvedJid = from;
-          }
-      }
+      const primaryJid = m.key.participant || sender || "";
+      const alternateJid = m.key.participantAlt;
+      let resolvedJid = (primaryJid.endsWith("@lid") ? primaryJid : alternateJid?.endsWith("@lid") ? alternateJid : primaryJid).replace(/:.*@/, "@");
 
       const senderNum = resolvedJid.split('@')[0].split(':')[0];
       const mentionJid = senderNum.match(/^\d+$/) ? `${senderNum}@s.whatsapp.net` : resolvedJid;
@@ -79,7 +80,7 @@ cmd({
       const time = dateAndTime.time || '';
       const runtime = runtimes(process.uptime());
       const user = isGroup ? `@${senderNum}` : pushname;
-      const version = dbData.VERSION || require("../package.json").version;
+      const version = dbData.VERSION || __import12.version;
       const ownerNumber = config.OWNER_NUMBER;
       const ownerName = config.OWNER_NAME;
       const hostname = dbData.HOST_NAME;
@@ -372,7 +373,7 @@ async (conn, mek, m, { from, reply }) => {
 ╭━━ ${botName || "PRINCE-MDX"} SYSTEM ━━╮
 ┃➠ ${platform}      : ${plat}
 ┃➠ ${upLang}        : ${runtime(process.uptime())}
-┃➠ ${ramLang}     : ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem() / 1024 / 1024)}MB
+┃➠ ${ramLang}     : ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(os.totalmem() / 1024 / 1024)}MB
 ┃➠ ${versionLang}       : ${dbData.VERSION}
 ┃➠ ${cpuLang}     : ${ccp.speed} GHz
 ┃➠ ${engiLang}        : ${cinfo}
@@ -686,9 +687,9 @@ try {
         if (isGroup) {
             const groupMeta = await conn.groupMetadata(from).catch(() => null);
             const participant = groupMeta?.participants?.find(p => 
-                p.id === quotedParticipant || p.lid === quotedParticipant || p.jid === quotedParticipant
+                p.id === quotedParticipant || p.lid === quotedParticipant || p.phoneNumber === quotedParticipant || p.jid === quotedParticipant
             );
-            targetJid = participant?.jid || participant?.pn || quotedParticipant;
+            targetJid = participant?.id || participant?.lid || participant?.phoneNumber || participant?.pn || participant?.jid || quotedParticipant;
             label = "Quoted User JID";
         } else {
             targetJid = quotedParticipant;
@@ -732,7 +733,7 @@ try {
         if (isGroup) {
             const groupMeta = await conn.groupMetadata(from).catch(() => null);
             const participant = groupMeta?.participants?.find(p => 
-                p.id === quotedParticipant || p.lid === quotedParticipant || p.jid === quotedParticipant
+                p.id === quotedParticipant || p.lid === quotedParticipant || p.phoneNumber === quotedParticipant || p.jid === quotedParticipant
             );
             targetLid = participant?.lid || participant?.id || quotedParticipant;
             label = "Quoted User LID";
@@ -743,7 +744,7 @@ try {
     } else if (isGroup) {
         const groupMeta = await conn.groupMetadata(from).catch(() => null);
         const myParticipant = groupMeta?.participants?.find(p => 
-            p.jid === sender || p.id === sender || p.lid === sender
+            p.id === sender || p.lid === sender || p.phoneNumber === sender || p.jid === sender
         );
         targetLid = myParticipant?.lid || myParticipant?.id || sender;
         label = "Your LID";
@@ -913,7 +914,7 @@ cmd({
     try {
         if (!q) return reply("❌ Provide a valid URL to fetch.");
 
-        const axios = require("axios");
+        const axios = __import13;
         const response = await axios.get(q, {
             responseType: "arraybuffer",
             validateStatus: () => true,

@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   
 torrentApi: "https://seedr-new.vercel.app",
 apilink: "https://www.dark-yasiya-api.site",

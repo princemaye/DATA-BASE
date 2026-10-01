@@ -1,6 +1,11 @@
-const config = require('../config');
-const axios = require('axios');
-const { cmd } = require('../command');
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "../config.js";
+import __import1 from "axios";
+import __import2 from "../command.js";
+const config = __import0;
+const axios = __import1;
+const { cmd } = __import2;
 
 const API_KEY = 'prince';
 const API_BASE = 'https://api.princetechn.com/api/ephoto360';
@@ -315,4 +320,4 @@ ${config.FOOTER}`;
   await conn.sendMessage(from, { text: menuText }, { quoted: mek });
 });
 
-module.exports = { fetchLogo, sendLogo };
+export default { fetchLogo, sendLogo };

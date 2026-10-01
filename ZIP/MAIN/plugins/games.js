@@ -1,12 +1,19 @@
-const axios = require("axios");
-const { cmd } = require("../command");
-const { toBold, toSmallCaps } = require('../lib/fonts');
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "axios";
+import __import1 from "../command.js";
+import __import2 from "../lib/fonts.js";
+import __import3 from "../config.js";
+import __import4 from "../lib/language.json" with { type: 'json' };
+const axios = __import0;
+const { cmd } = __import1;
+const { toBold, toSmallCaps } = __import2;
 
 // ================= CONFIG =================
-const config = require("../config");
+const config = __import3;
 
 // ================= LANGUAGE =================
-const allLangs = require("../lib/language.json");
+const allLangs = __import4;
 const LANG = config.LANG === 'EN' ? 'EN' 
          : config.LANG === 'FR' ? 'FR' 
          : 'EN';
@@ -3328,7 +3335,7 @@ cmd({
   await efStartTournament(conn, from, game);
 });
 
-module.exports = {
+export default {
   triviaGames,
   handleTriviaInput,
   flagGames,

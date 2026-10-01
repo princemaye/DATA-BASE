@@ -1,7 +1,14 @@
-const { google } = require("googleapis");
-const path = require("path");
-const { Readable } = require("stream");
-const axios = require("axios");
+import * as __import0 from "googleapis";
+import __import1 from "path";
+import * as __import2 from "stream";
+import __import3 from "axios";
+import { dirname as __pathDirname } from "node:path";
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __dirname = __pathDirname(__fileURLToPath(import.meta.url));
+const { google } = __import0;
+const path = __import1;
+const { Readable } = __import2;
+const axios = __import3;
 
 const KEYFILEPATH = path.join(__dirname, "service-account.json");
 const SCOPES = ["https://www.googleapis.com/auth/drive"];
@@ -154,7 +161,7 @@ async function deleteAllFiles() {
   }
 }
 
-module.exports = {
+export default {
   uploadGdrive,
   uploadGdriveV2,
   listAllFiles,

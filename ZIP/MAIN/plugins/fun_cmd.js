@@ -1,15 +1,26 @@
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "../config.js";
+import __import1 from "../command.js";
+import __import2 from "axios";
+import __import3 from "sharp";
+import __import4 from "fs";
+import __import5 from "path";
+import * as __import6 from "prince-baileys";
+import __import7 from "../lib/tweet-generator.js";
+import __import8 from "../lib/language.json" with { type: 'json' };
 // ============================= R E Q U E S T =============================
-const config = require('../config');
-const { cmd } = require('../command');
-const axios = require('axios');
-const sharp = require('sharp');
-const fs = require('fs');
-const path = require('path');
-const { downloadMediaMessage } = require('prince-baileys');
-const { generateTweetImage, formatDate, fmtCount } = require('../lib/tweet-generator');
+const config = __import0;
+const { cmd } = __import1;
+const axios = __import2;
+const sharp = __import3;
+const fs = __import4;
+const path = __import5;
+const { downloadMediaMessage } = __import6;
+const { generateTweetImage, formatDate, fmtCount } = __import7;
 
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import8;
 var LANG = config.LANG === 'EN' ? 'EN' 
          : config.LANG === 'FR' ? 'FR' 
          : 'EN';

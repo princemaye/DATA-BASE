@@ -1,11 +1,24 @@
-const axios = require('axios')
-const fs = require('fs')
-const path = require('path')
-const mimes = require('mime-types')
+import __import0 from "axios";
+import __import1 from "fs";
+import __import2 from "path";
+import __import3 from "mime-types";
+import * as __import4 from "file-type";
+import __import5 from "sharp";
+import __import6 from "file-type";
+import * as __translateV from "@vitalets/google-translate-api";
+import __translateGoogle from "translate-google";
+import __translateGoogleApi from "google-translate-api-x";
+import * as __childProcess from "node:child_process";
+import __packageData from "../package.json" with { type: 'json' };
+import FormData from "form-data";
+const axios = __import0
+const fs = __import1
+const path = __import2
+const mimes = __import3
 const {
     fileTypeFromBuffer
-} = require('file-type')
-const sharp = require("sharp");
+} = __import4
+const sharp = __import5;
 
 const getContextInfo = (botName) => {
     return {
@@ -45,6 +58,7 @@ const getGroupAdmins = (participants) => {
         if (p?.admin === 'admin' || p?.admin === 'superadmin') {
             if (p.id) admins.push(p.id);
             if (p.lid && p.lid !== p.id) admins.push(p.lid);
+            if (p.phoneNumber && p.phoneNumber !== p.id) admins.push(p.phoneNumber);
             if (p.jid) admins.push(p.jid);
             if (p.pn && p.pn !== p.jid) admins.push(p.pn);
         }
@@ -59,7 +73,7 @@ const isParticipantAdmin = (participants, userIds) => {
     for (const p of participants) {
         if (p?.admin === 'admin' || p?.admin === 'superadmin') {
             for (const uid of ids) {
-                if (uid && (p.id === uid || p.lid === uid || p.jid === uid || p.pn === uid)) {
+                if (uid && (p.id === uid || p.lid === uid || p.phoneNumber === uid || p.jid === uid || p.pn === uid)) {
                     return true;
                 }
             }
@@ -74,6 +88,7 @@ const getParticipantIds = (participants) => {
     for (const p of participants) {
         if (p.id) ids.push(p.id);
         if (p.lid && p.lid !== p.id) ids.push(p.lid);
+        if (p.phoneNumber && p.phoneNumber !== p.id) ids.push(p.phoneNumber);
         if (p.jid) ids.push(p.jid);
         if (p.pn && p.pn !== p.jid) ids.push(p.pn);
     }
@@ -197,7 +212,7 @@ async function formatSize(bytes, si = true, dp = 2) {
 
 async function getFile(url) {
     try {
-        const fileType = require("file-type");
+        const fileType = __import6;
         const response = await getBuffer(url)
         let type = await fileType.fromBuffer(response);
         let savepath = "./" + getRandom('.' + type.ext)
@@ -315,7 +330,7 @@ async function getDateAndTime(timeZone = 'Asia/Colombo') {
 
 const tr1 = async (text, toLang) => {
   try {
-    const { translate } = require('@vitalets/google-translate-api');
+    const { translate } = __translateV;
     const res = await translate(text, { to: toLang });
     return res.text;
   } catch (error) {
@@ -328,7 +343,7 @@ const tr1 = async (text, toLang) => {
 const tr2 = async (text, toLang) => {
   try {
       
-    const translate = require('translate-google');
+    const translate = __translateGoogle;
     const res = await translate(text, { to: toLang });
     return res;
   } catch (err) {
@@ -340,7 +355,7 @@ const tr2 = async (text, toLang) => {
 
 const tr = async (text, toLang) => {
   try {
-    const translate = require('google-translate-api-x');
+    const translate = __translateGoogleApi;
     const res = await translate(text, { to: toLang });
     return res.text;
   } catch (error) {
@@ -436,8 +451,8 @@ const platformAwareRestart = (delay = 1500) => {
             console.log('🔄 Restarting via process.exit (Replit)...');
             process.exit(0);
         } else {
-            const { exec } = require('child_process');
-            const botName = require('../package.json').name || 'prince-mdx';
+            const { exec } = __childProcess;
+            const botName = __packageData.name || 'prince-mdx';
             console.log(`🔄 Restarting via PM2 (${botName})...`);
             exec(`pm2 restart ${botName}`, (error, stdout, stderr) => {
                 if (error) {
@@ -450,7 +465,7 @@ const platformAwareRestart = (delay = 1500) => {
     }, delay);
 };
 
-module.exports = {
+export default {
     getBuffer,
     getGroupAdmins,
     isParticipantAdmin,
@@ -481,8 +496,6 @@ module.exports = {
 }
 
 async function uploadToCatbox(buffer, filename = 'file.bin') {
-    const FormData = require('form-data');
-
     const ext = filename.split('.').pop().toLowerCase();
     const mimeMap = {
         mp3: 'audio/mpeg', ogg: 'audio/ogg', opus: 'audio/ogg',

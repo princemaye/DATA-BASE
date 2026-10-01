@@ -1,14 +1,23 @@
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "axios";
+import __import1 from "../command.js";
+import __import2 from "../config.js";
+import __import3 from "qrcode";
+import * as __import4 from "compile-run";
+import * as __import5 from "mathjs";
+import __import6 from "../lib/language.json" with { type: 'json' };
 // ============================= R E Q U E S T =============================
-const axios = require("axios");
-const { cmd, commands } = require('../command');
-const config = require("../config");
-const qrcode = require("qrcode");
+const axios = __import0;
+const { cmd, commands } = __import1;
+const config = __import2;
+const qrcode = __import3;
 const WEATHER_API_KEY = "2244e068bad8437c93efe32310cad85a";
-const { python } = require('compile-run');
-const math = require("mathjs");
+const { python } = __import4;
+const math = __import5;
 
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import6;
 var LANG = config.LANG === 'EN' ? 'EN' 
          : config.LANG === 'FR' ? 'FR' 
          : 'EN';

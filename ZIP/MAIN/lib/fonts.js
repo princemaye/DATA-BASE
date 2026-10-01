@@ -77,7 +77,7 @@ const toFancyFont = (text, style = 'smallcaps') => {
     }
 };
 
-module.exports = {
+export default {
     toSmallCaps,
     toBold,
     toItalic,

@@ -1,5 +1,7 @@
-const { Octokit } = require("@octokit/rest");
-const config = require("../config");
+import * as __import0 from "@octokit/rest";
+import __import1 from "../config.js";
+const { Octokit } = __import0;
+const config = __import1;
 let inputConfig = {
   ANTI_LINK: [],
   ANTI_BOT: [],
@@ -329,4 +331,4 @@ config.TWITTER_DETAILS_MESSAGE = get.TWITTER_DETAILS_MESSAGE || "default";
   
 }
 
-module.exports = GitHubUserData;
+export default GitHubUserData;

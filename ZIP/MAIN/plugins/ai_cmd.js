@@ -1,16 +1,25 @@
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "axios";
+import __import1 from "../command.js";
+import __import2 from "../config.js";
+import __import3 from "../lib/functions.js";
+import __import4 from "../lib/scraper.js";
+import * as __import5 from "prince-baileys";
+import __import6 from "../lib/language.json" with { type: 'json' };
 // ============================= R E Q U E S T =============================
-const axios = require("axios");
-const { cmd } = require("../command");
-const config = require("../config");
-const { fetchJson, uploadToCatbox } = require("../lib/functions");
-const { blackbox } = require("../lib/scraper");
-const { downloadMediaMessage } = require("prince-baileys");
+const axios = __import0;
+const { cmd } = __import1;
+const config = __import2;
+const { fetchJson, uploadToCatbox } = __import3;
+const { blackbox } = __import4;
+const { downloadMediaMessage } = __import5;
 
 const PRINCE_API_KEY = "prince_api_56yjJ568dte4";
 const PRINCE_API_BASE = "https://api.princetechn.com/api/ai";
 
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import6;
 var LANG = config.LANG === 'EN' ? 'EN' 
          : config.LANG === 'FR' ? 'FR' 
          : 'EN';
@@ -848,4 +857,3 @@ cmd({
         reply('❌ *Failed to generate speech. Please try again.*');
     }
 });
-

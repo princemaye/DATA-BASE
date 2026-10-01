@@ -433,4 +433,4 @@ const lang = {
   }
 };
 
-module.exports = lang;
+export default lang;

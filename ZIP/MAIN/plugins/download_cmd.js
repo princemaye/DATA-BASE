@@ -1,25 +1,49 @@
+import __import0 from "../config.js";
+import __import1 from "../command.js";
+import __import2 from "../lib/functions.js";
+import __import3 from "api-dylux";
+import __import4 from "@dark-yasiya/scrap";
+import __import5 from "../lib/scraper.js";
+import __import6 from "../lib/numreply-db.js";
+import __import7 from "denethdev-ytmp3";
+import * as __import8 from "ruhend-scraper";
+import * as __import9 from "megajs";
+import __import10 from "axios";
+import __import11 from "fs";
+import __import12 from "crypto";
+import __import13 from "path";
+import * as __import14 from "cheerio";
+import __import15 from "iconv-lite";
+import __import16 from "async-g-i-s";
+import __import17 from "mime-types";
+import __import18 from "../lib/config.js";
+import __import19 from "../lib/language.json" with { type: 'json' };
+import { dirname as __pathDirname } from "node:path";
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __dirname = __pathDirname(__fileURLToPath(import.meta.url));
+const __filename = __fileURLToPath(import.meta.url);
 // ============================= R E Q U E S T =============================
-const config = require('../config');
-const { cmd } = require('../command');
-const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, checkDailymotionLink, checkGDriveLink, getThumbnailFromUrl, resizeThumbnail, formatMessage} = require('../lib/functions')
+const config = __import0;
+const { cmd } = __import1;
+const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson, checkDailymotionLink, checkGDriveLink, getThumbnailFromUrl, resizeThumbnail, formatMessage} = __import2
 
-const fg = require('api-dylux');
-const DY_SCRAP = require('@dark-yasiya/scrap');
+const fg = __import3;
+const DY_SCRAP = __import4;
 const dy_scrap = new DY_SCRAP();
-const { tiktok, ytmp3_v2, fbdownload, ytmp4_v2, mediaFire, apkSearch, apkDownload, twitter, xvideosSearch, allInOneInfo, allInOneDownload } = require("../lib/scraper");
-const { storenumrepdata } = require('../lib/numreply-db')
-const deneth = require('denethdev-ytmp3');
-const { igdl } = require('ruhend-scraper')
-const { File } = require('megajs');
-const axios = require('axios'); 
-const fs = require('fs');
-const crypto = require('crypto');
-const path = require('path');
-const cheerio = require("cheerio");
-const iconv = require("iconv-lite");
-const gis = require('async-g-i-s');
-const mime = require('mime-types');
-let dbData = require("../lib/config");
+const { tiktok, ytmp3_v2, fbdownload, ytmp4_v2, mediaFire, apkSearch, apkDownload, twitter, xvideosSearch, allInOneInfo, allInOneDownload } = __import5;
+const { storenumrepdata } = __import6
+const deneth = __import7;
+const { igdl } = __import8
+const { File } = __import9;
+const axios = __import10; 
+const fs = __import11;
+const crypto = __import12;
+const path = __import13;
+const cheerio = __import14;
+const iconv = __import15;
+const gis = __import16;
+const mime = __import17;
+let dbData = __import18;
 
 const PIXABAY_API_KEY = '41400543-cbba021cd3b6a727f4d9f07ea';
 const PIXABAY_API_URL = 'https://pixabay.com/api/';
@@ -64,7 +88,7 @@ function capitalizeFirst(text) {
 }
 
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import19;
 var LANG = config.LANG === 'EN' ? 'EN' 
          : config.LANG === 'FR' ? 'FR' 
          : 'EN';

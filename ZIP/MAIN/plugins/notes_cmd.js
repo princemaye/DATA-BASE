@@ -1,7 +1,13 @@
-const { cmd } = require("../command");
-const config = require('../config');
-const DBM = require("../lib/user-db");
-const dbData = require("../lib/config");
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "../command.js";
+import __import1 from "../config.js";
+import __import2 from "../lib/user-db.js";
+import __import3 from "../lib/config.js";
+const { cmd } = __import0;
+const config = __import1;
+const DBM = __import2;
+const dbData = __import3;
 
 const ymd_db = new DBM(dbData.TOKEN, dbData.USER_NAME, dbData.REPO_NAME);
 const tableName = dbData.tableName;
@@ -408,4 +414,4 @@ _Notes are personal and stored securely in the database._`,
   },
 );
 
-module.exports = {};
+export default {};

@@ -1,23 +1,38 @@
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "axios";
+import * as __import1 from "cheerio";
+import __import2 from "../command.js";
+import __import3 from "../config.js";
+import __import4 from "../lib/scraper.js";
+import __import5 from "fs";
+import __import6 from "path";
+import * as __import7 from "child_process";
+import __import8 from "util";
+import __import9 from "../lib/numreply-db.js";
+import __import10 from "../lib/functions.js";
+import * as __import11 from "wa-sticker-formatter";
+import __import12 from "../lib/language.json" with { type: 'json' };
 // ============================= R E Q U E S T =============================
-const axios = require("axios");
-const cheerio = require('cheerio');
-const { cmd } = require("../command"); 
-const config = require("../config");
-const { getNpmPackageInfo, getNpmDownloads, getGithubUser, tiktokSearch } = require("../lib/scraper");
+const axios = __import0;
+const cheerio = __import1;
+const { cmd } = __import2; 
+const config = __import3;
+const { getNpmPackageInfo, getNpmDownloads, getGithubUser, tiktokSearch } = __import4;
 
-const fs = require("fs");
-const path = require("path");
-const { exec } = require("child_process");
+const fs = __import5;
+const path = __import6;
+const { exec } = __import7;
 const OMDB_API_KEY = "da3d5959";
 const TMDB_API_KEY = "91c9bde7f4f9487b7b4f75d6c6dfc84b"; 
-const util = require('util')
-const { storenumrepdata } = require('../lib/numreply-db');
-const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions');
-const { Sticker, StickerTypes } = require("wa-sticker-formatter");
+const util = __import8
+const { storenumrepdata } = __import9;
+const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = __import10;
+const { Sticker, StickerTypes } = __import11;
 const botName = config.BOT_NAME && config.BOT_NAME !== "default" ? config.BOT_NAME : null;
 
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import12;
 var LANG = config.LANG === 'EN' ? 'EN' 
          : config.LANG === 'FR' ? 'FR' 
          : 'EN';

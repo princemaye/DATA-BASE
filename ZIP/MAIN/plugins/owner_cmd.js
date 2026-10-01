@@ -1,12 +1,37 @@
+import __import0 from "../config.js";
+import __import1 from "os";
+import __import2 from "fs";
+import __import3 from "path";
+import * as __import4 from "prince-baileys";
+import * as __import5 from "fs/promises";
+import * as __import6 from "child_process";
+import __import7 from "../command.js";
+import __import8 from "../lib/functions.js";
+import * as __import9 from "@dark-yasiya/imgbb.js";
+import __import10 from "file-type";
+import __import11 from "../lib/mongodb.js";
+import __import12 from "../lib/user-db.js";
+import __import13 from "../lib/auto_function.js";
+import __import14 from "../lib/config.js";
+import __import15 from "../lib/fonts.js";
+import __import16 from "../lib/movie_db.js";
+import __import17 from "moment-timezone";
+import __import18 from "../lib/numreply-db.js";
+import __import19 from "../lib/language.json" with { type: 'json' };
+import __import20 from "sharp";
+import { dirname as __pathDirname } from "node:path";
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __dirname = __pathDirname(__fileURLToPath(import.meta.url));
+const __filename = __fileURLToPath(import.meta.url);
 // ============================= R E Q U E S T =============================
-const config = require("../config");
-const os = require("os");
-const fs = require("fs");
-const path = require("path");
-const { downloadMediaMessage } = require("prince-baileys");
-const { writeFile } = require("fs/promises");
-const { exec } = require("child_process");
-const { cmd, commands } = require("../command");
+const config = __import0;
+const os = __import1;
+const fs = __import2;
+const path = __import3;
+const { downloadMediaMessage } = __import4;
+const { writeFile } = __import5;
+const { exec } = __import6;
+const { cmd, commands } = __import7;
 const {getBuffer,
     getGroupAdmins,
     getRandom,
@@ -21,9 +46,9 @@ const {getBuffer,
     getMyGroupDetails,
     formatMessage,
     platformAwareRestart,
-    uploadToCatbox} = require("../lib/functions");
-const { image2url } = require('@dark-yasiya/imgbb.js');
-const fileType = require('file-type');
+    uploadToCatbox} = __import8;
+const { image2url } = __import9;
+const fileType = __import10;
 
 const {
     saveAutoReply,
@@ -33,13 +58,13 @@ const {
     getAllReplies,
     findReplies,
     handleAutoReply,
-} = require("../lib/mongodb");
-const DBM = require("../lib/user-db");
-const GitHubDB = require("../lib/auto_function");
-const dbData = require("../lib/config");
-const { toSmallCaps, toBold } = require("../lib/fonts");
-const { resetMovie } = require("../lib/movie_db");
-const moment = require("moment-timezone");
+} = __import11;
+const DBM = __import12;
+const GitHubDB = __import13;
+const dbData = __import14;
+const { toSmallCaps, toBold } = __import15;
+const { resetMovie } = __import16;
+const moment = __import17;
 const ymd_db = new DBM(dbData.TOKEN, dbData.USER_NAME, dbData.REPO_NAME);
 const auto_rep = new GitHubDB(
     dbData.TOKEN,
@@ -49,7 +74,7 @@ const auto_rep = new GitHubDB(
 );
 const tableName = dbData.tableName;
 const key = dbData.key;
-const { storenumrepdata } = require("../lib/numreply-db");
+const { storenumrepdata } = __import18;
 function formatNumber(num) {
     return String(num).padStart(2, "0");
 }
@@ -78,7 +103,7 @@ function getMimeTypeFromExtension(extension) {
 }
 
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import19;
 var LANG = config.LANG === "EN" ? "EN" : config.LANG === "FR" ? "FR" : "EN";
 
 var lang = allLangs[LANG];
@@ -1484,7 +1509,7 @@ cmd(
         try {
             if (!isOwners) return await reply(ownerMg);
 
-            const { exec } = require("child_process");
+            const { exec } = __import6;
             await reply(restartMg);
 
             if (
@@ -2014,34 +2039,6 @@ cmd(
                 return await reply(pfMention);
             }
 
-            // Resolve LID to real phone JID
-            if (targetJid.endsWith("@lid")) {
-                let resolved = targetJid;
-                try {
-                    const jid = await conn.getJidFromLid(targetJid);
-                    if (jid) resolved = jid;
-                } catch {}
-
-                if (resolved === targetJid) {
-                    const senderPn =
-                        m.msg?.contextInfo?.senderPn ||
-                        mek?.message?.[Object.keys(mek.message || {})[0]]?.contextInfo?.senderPn;
-                    if (senderPn && senderPn.includes("@s.whatsapp.net")) resolved = senderPn;
-                }
-
-                if (resolved === targetJid && isGroup) {
-                    try {
-                        const groupMeta = await conn.groupMetadata(from);
-                        const participant = groupMeta.participants.find(p => p.id === targetJid || p.lid === targetJid);
-                        if (participant && (participant.pn || participant.jid)) {
-                            resolved = participant.pn || participant.jid;
-                        }
-                    } catch {}
-                }
-
-                targetJid = resolved;
-            }
-
             const displayId = targetJid.replace(/@.*$/, "");
 
             const url = await Promise.race([
@@ -2122,54 +2119,9 @@ cmd(
                 return await reply("❌ Please reply to a user's message!");
             }
 
-            let targetUser = m.quoted.sender;
-            let realJid = targetUser;
-
-            if (targetUser.endsWith("@lid")) {
-                try {
-                    const jid = await conn.getJidFromLid(targetUser);
-                    if (jid) realJid = jid;
-                } catch {}
-
-                if (realJid === targetUser) {
-                    const senderPn =
-                        m.msg?.contextInfo?.senderPn ||
-                        mek?.message?.[Object.keys(mek.message || {})[0]]
-                            ?.contextInfo?.senderPn;
-                    if (senderPn && senderPn.includes("@s.whatsapp.net")) {
-                        realJid = senderPn;
-                    }
-                }
-
-                if (realJid === targetUser && isGroup) {
-                    try {
-                        const groupMeta = await conn.groupMetadata(from);
-                        const participant = groupMeta.participants.find(
-                            (p) => p.id === targetUser || p.lid === targetUser,
-                        );
-                        if (
-                            participant &&
-                            (participant.pn || participant.jid)
-                        ) {
-                            realJid = participant.pn || participant.jid;
-                        }
-                    } catch {}
-                }
-
-                if (realJid === targetUser && !isGroup) {
-                    if (from.includes("@s.whatsapp.net")) {
-                        realJid = from;
-                    }
-                }
-            }
-
-            const number = realJid
-                .replace(/@s\.whatsapp\.net$/, "")
-                .replace(/@lid$/, "")
-                .split(":")[0];
-            const mentionJid = number.match(/^\d+$/)
-                ? `${number}@s.whatsapp.net`
-                : realJid;
+            const realJid = m.quoted.sender;
+            const number = realJid.split("@")[0].split(":")[0];
+            const mentionJid = realJid;
 
             let profilePictureUrl;
             try {
@@ -2933,7 +2885,7 @@ cmd(
                 return reply("*Please reply to an image!*");
 
             const buffer = await m.quoted.download();
-            const sharp = require("sharp");
+            const sharp = __import20;
 
             const resized = await sharp(buffer)
                 .resize(720, 720, {

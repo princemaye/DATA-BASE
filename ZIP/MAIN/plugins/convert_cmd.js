@@ -1,21 +1,47 @@
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "axios";
+import __import1 from "../command.js";
+import __import2 from "../config.js";
+import * as __import3 from "@vitalets/google-translate-api";
+import __import4 from "tinyurl";
+import __import5 from "qrcode";
+import __import6 from "whois-json";
+import __import7 from "crypto";
+import __import8 from "fs";
+import * as __import9 from "child_process";
+import __import10 from "os";
+import __import11 from "path";
+import __import12 from "ffmpeg-static";
+import __import13 from "fluent-ffmpeg";
+import __import14 from "sharp";
+import __import15 from "javascript-obfuscator";
+import * as __import16 from "@dark-yasiya/imgbb.js";
+import __import17 from "file-type";
+import * as __import18 from "prince-baileys";
+import * as __import19 from "wa-sticker-formatter";
+import __import20 from "../lib/functions.js";
+import * as __import21 from "tempmail.lol";
+import __import22 from "../lib/language.json" with { type: 'json' };
+import __import23 from "translate-google";
 // ============================= R E Q U E S T =============================
-const axios = require("axios");
-const { cmd } = require("../command.js");
-const config = require("../config");
-const { translate } = require("@vitalets/google-translate-api");
-const tinyurl = require("tinyurl");
-const QRCode = require("qrcode");
-const whois = require("whois-json");
-const crypto = require("crypto");
-const fs = require('fs');
-const { spawn, execSync } = require('child_process');
-const os = require('os');
-const path = require('path');
+const axios = __import0;
+const { cmd } = __import1;
+const config = __import2;
+const { translate } = __import3;
+const tinyurl = __import4;
+const QRCode = __import5;
+const whois = __import6;
+const crypto = __import7;
+const fs = __import8;
+const { spawn, execSync } = __import9;
+const os = __import10;
+const path = __import11;
 
 // Find ffmpeg — bundled binary first, then system PATH fallback
 function findFfmpeg() {
     try {
-        const staticPath = require('ffmpeg-static');
+        const staticPath = __import12;
         if (staticPath && fs.existsSync(staticPath)) return staticPath;
     } catch (_) {}
     // Heroku buildpack path
@@ -27,22 +53,22 @@ function findFfmpeg() {
 const ffmpegBin = findFfmpeg();
 
 // Tell fluent-ffmpeg (used by wa-sticker-formatter) where ffmpeg lives
-const fluentFfmpeg = require('fluent-ffmpeg');
+const fluentFfmpeg = __import13;
 fluentFfmpeg.setFfmpegPath(ffmpegBin);
 
-const sharp = require("sharp");
-const Obf = require("javascript-obfuscator");
-const { image2url } = require('@dark-yasiya/imgbb.js');
-const fileType = require("file-type");
-const { getContentType, downloadContentFromMessage } = require('prince-baileys');
-const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
-const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = require('../lib/functions');
+const sharp = __import14;
+const Obf = __import15;
+const { image2url } = __import16;
+const fileType = __import17;
+const { getContentType, downloadContentFromMessage } = __import18;
+const { Sticker, createSticker, StickerTypes } = __import19;
+const {getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, runtime, sleep, fetchJson} = __import20;
 
-const { TempMail } = require("tempmail.lol");
+const { TempMail } = __import21;
 const tempmail = new TempMail();
 const botName = config.BOT_NAME && config.BOT_NAME !== "default" ? config.BOT_NAME : null;
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import22;
 var LANG = config.LANG === 'EN' ? 'EN' 
          : config.LANG === 'FR' ? 'FR' 
          : 'EN';
@@ -549,7 +575,7 @@ cmd({
         let translatedText;
         try {
             // Method 1: Using translate-google (if installed)
-            const translateGoogle = require("translate-google");
+            const translateGoogle = __import23;
             translatedText = await translateGoogle(text, { to: lang });
         } catch (translateError) {
             console.log("translate-google failed, trying alternative...");
@@ -1131,7 +1157,7 @@ cmd({
         });
 
         const uploadBuf = mp3Buf || buf;
-        const { uploadToCatbox } = require('../lib/functions');
+        const { uploadToCatbox } = __import20;
         const hostedUrl = await uploadToCatbox(uploadBuf, 'audio.mp3');
         if (!hostedUrl) return reply("❌ All upload services failed. Please try again later.");
 
@@ -1848,7 +1874,7 @@ All numbers pass Luhn validation.`;
 });
 
 //============================ CREATE PDF ============================
-const { image2url: uploadToImgBB } = require('@dark-yasiya/imgbb.js');
+const { image2url: uploadToImgBB } = __import16;
 
 cmd({
     pattern: "pdf",

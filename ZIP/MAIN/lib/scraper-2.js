@@ -1,4 +1,5 @@
-const axios = require('axios');
+import __import0 from "axios";
+const axios = __import0;
 
 async function convert(id, type, state) {
   try {
@@ -38,7 +39,7 @@ async function infoconvert(id, type, state) {
   }
 }
 
-module.exports = class Dailymotion {
+export default class Dailymotion {
   constructor() {}
 
   async download(query, format = 'mp4') {

@@ -1,13 +1,24 @@
-const axios = require('axios');
-const crypto = require('crypto');
-const cheerio = require('cheerio');
-const qs = require('querystring');
+import __import0 from "axios";
+import __import1 from "crypto";
+import * as __import2 from "cheerio";
+import __import3 from "querystring";
+import __import4 from "yt-search";
+import * as __import5 from "fs";
+import * as __import6 from "path";
+import * as __import7 from "child_process";
+import { dirname as __pathDirname } from "node:path";
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __dirname = __pathDirname(__fileURLToPath(import.meta.url));
+const axios = __import0;
+const crypto = __import1;
+const cheerio = __import2;
+const qs = __import3;
 const file_size_url = (...args) => import('file_size_url').then(({ default: file_size_url }) => file_size_url(...args));
-const yts = require("yt-search");
+const yts = __import4;
 const creator = "Dark-Yasiya";
-const { promises } = require('fs');
-const { join } = require('path');
-const { spawn } = require('child_process');
+const { promises } = __import5;
+const { join } = __import6;
+const { spawn } = __import7;
 
 // ====================================== D O W N L O A D ======================================
 async function ytmp3_v2(set) { 
@@ -1124,7 +1135,7 @@ function toVideo(buffer, ext) {
 }
 
 
-module.exports = { 
+export default { 
   blackbox, 
   fbdownload, 
   apkSearch, 

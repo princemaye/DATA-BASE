@@ -100,7 +100,7 @@ function import_data(obj) {
   console.log('📥 Num Reply DB imported into memory')
 }
 
-module.exports = {
+export default {
   pqs_connection_start,
   start_numrep_process,
   upload_to_pqs,

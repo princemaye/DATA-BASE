@@ -1,7 +1,8 @@
+import * as __import0 from "@octokit/rest";
 
 
 // lib/warning_db.js
-const { Octokit } = require("@octokit/rest");
+const { Octokit } = __import0;
 
 class WarningDB {
     constructor(token, userName, repoName, filePath) {
@@ -239,4 +240,4 @@ class WarningDB {
     }
 }
 
-module.exports = WarningDB;
+export default WarningDB;

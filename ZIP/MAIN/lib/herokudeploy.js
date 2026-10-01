@@ -1,4 +1,5 @@
-const axios = require("axios");
+import __import0 from "axios";
+const axios = __import0;
 
 async function deployHeroku({ apiKey, appName, githubUser, githubRepo, githubToken }) {
   try {
@@ -65,4 +66,4 @@ async function deployHeroku({ apiKey, appName, githubUser, githubRepo, githubTok
   }
 }
 
-module.exports = { deployHeroku };
+export default { deployHeroku };

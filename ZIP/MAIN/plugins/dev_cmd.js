@@ -1,7 +1,13 @@
-const { cmd, commands } = require("../command");
-const config = require('../config');
-const fs = require("fs");
-const path = require("path");
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "../command.js";
+import __import1 from "../config.js";
+import __import2 from "fs";
+import __import3 from "path";
+const { cmd, commands } = __import0;
+const config = __import1;
+const fs = __import2;
+const path = __import3;
 
 cmd(
   {
@@ -211,4 +217,4 @@ cmd(
   },
 );
 
-module.exports = {};
+export default {};

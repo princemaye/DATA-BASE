@@ -1,16 +1,24 @@
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "../command.js";
+import __import1 from "../config.js";
+import __import2 from "../lib/functions.js";
+import __import3 from "../lib/fonts.js";
+import __import4 from "../lib/numreply-db.js";
+import __import5 from "../lib/language.json" with { type: 'json' };
 // ============================= SPORTS PLUGIN =============================
-const { cmd } = require("../command");
-const config = require("../config");
-const { fetchJson } = require("../lib/functions");
+const { cmd } = __import0;
+const config = __import1;
+const { fetchJson } = __import2;
 
-const { toBold, toSmallCaps } = require("../lib/fonts");
-const { storenumrepdata } = require("../lib/numreply-db");
+const { toBold, toSmallCaps } = __import3;
+const { storenumrepdata } = __import4;
 
 const SPORTS_API_BASE = "https://apisKeith.top";
 const SPORTS_IMAGE = "https://i.ibb.co/gLRMhk9p/N0r-QVLHAY0.jpg";
 
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import5;
 var LANG = config.LANG === "EN" ? "EN" : config.LANG === "FR" ? "FR" : "EN";
 var lang = allLangs[LANG];
 var { errorMg, numreplyMg } = lang;

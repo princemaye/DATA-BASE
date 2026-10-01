@@ -1,4 +1,5 @@
-const { Octokit } = require("@octokit/rest");
+import * as __import0 from "@octokit/rest";
+const { Octokit } = __import0;
 
 class GitHubDB {
     constructor(token, userName, repoName, filePath) {
@@ -150,4 +151,4 @@ class GitHubDB {
     }
 }
 
-module.exports = GitHubDB;
+export default GitHubDB;

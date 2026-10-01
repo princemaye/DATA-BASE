@@ -1,4 +1,5 @@
-const { MongoClient } = require("mongodb");
+import * as __import0 from "mongodb";
+const { MongoClient } = __import0;
 
 class SessionManager {
   constructor(uri, dbName = "princeBot", collectionName = "sessions") {
@@ -49,4 +50,4 @@ class SessionManager {
   }
 }
 
-module.exports = SessionManager;
+export default SessionManager;

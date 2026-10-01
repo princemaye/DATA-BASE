@@ -1,5 +1,10 @@
-const fs = require('fs');
-const path = require('path');
+import __import0 from "fs";
+import __import1 from "path";
+import { dirname as __pathDirname } from "node:path";
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __dirname = __pathDirname(__fileURLToPath(import.meta.url));
+const fs = __import0;
+const path = __import1;
 
 const FILE = path.join(__dirname, '../data/msg_counts.json');
 const SAVE_INTERVAL = 30000; // save every 30 seconds
@@ -55,4 +60,4 @@ function getTop(groupId, n = 5) {
 load();
 scheduleSave();
 
-module.exports = { increment, getTop, save };
+export default { increment, getTop, save };

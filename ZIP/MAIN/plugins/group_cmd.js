@@ -1,6 +1,22 @@
+import __import0 from "../config.js";
+import __import1 from "../command.js";
+import __import2 from "../lib/functions.js";
+import * as __import3 from "prince-baileys";
+import __import4 from "../lib/user-db.js";
+import __import5 from "../lib/numreply-db.js";
+import __import6 from "../lib/config.js";
+import __import7 from "../lib/fonts.js";
+import __import8 from "fs";
+import __import9 from "path";
+import __import10 from "../lib/msg-counter.js";
+import __import11 from "../lib/language.json" with { type: 'json' };
+import { dirname as __pathDirname } from "node:path";
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __dirname = __pathDirname(__fileURLToPath(import.meta.url));
+const __filename = __fileURLToPath(import.meta.url);
 // ============================= R E Q U E S T =============================
-const config = require("../config");
-const { cmd, commands } = require("../command");
+const config = __import0;
+const { cmd, commands } = __import1;
 const {
     getBuffer,
     getGroupAdmins,
@@ -11,21 +27,21 @@ const {
     runtime,
     sleep,
     fetchJson,
-} = require("../lib/functions");
-const { downloadMediaMessage } = require("prince-baileys");
+} = __import2;
+const { downloadMediaMessage } = __import3;
 
-const DBM = require("../lib/user-db");
-const { storenumrepdata } = require("../lib/numreply-db");
-const dbData = require("../lib/config");
-const { toSmallCaps, toBold } = require("../lib/fonts");
+const DBM = __import4;
+const { storenumrepdata } = __import5;
+const dbData = __import6;
+const { toSmallCaps, toBold } = __import7;
 const ymd_db = new DBM(dbData.TOKEN, dbData.USER_NAME, dbData.REPO_NAME);
 const tableName = dbData.tableName;
 const key = dbData.key;
-const fs = require("fs");
-const path = require("path");
-const msgCounter = require("../lib/msg-counter");
+const fs = __import8;
+const path = __import9;
+const msgCounter = __import10;
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import11;
 var LANG = config.LANG === "EN" ? "EN" : config.LANG === "FR" ? "FR" : "EN";
 
 var lang = allLangs[LANG];
@@ -133,10 +149,14 @@ cmd(
             for (let member of participants) {
                 let phoneNumber = null;
 
-                if (member.jid && member.jid.includes("@s.whatsapp.net")) {
-                    phoneNumber = member.jid.split("@")[0];
+                if (member.phoneNumber && member.phoneNumber.includes("@s.whatsapp.net")) {
+                    phoneNumber = member.phoneNumber.split("@")[0];
+                } else if (member.phoneNumber) {
+                    phoneNumber = member.phoneNumber.replace(/[^0-9]/g, "");
                 } else if (member.pn) {
                     phoneNumber = member.pn.replace(/[^0-9]/g, "");
+                } else if (member.jid && member.jid.includes("@s.whatsapp.net")) {
+                    phoneNumber = member.jid.split("@")[0];
                 } else if (member.id && member.id.includes("@s.whatsapp.net")) {
                     phoneNumber = member.id.split("@")[0];
                 } else if (member.id && !member.id.includes("@lid")) {
@@ -1601,7 +1621,7 @@ cmd(
             teks += `━━━━━━━━━━━━━━━\n`;
 
             participants.forEach((mem, i) => {
-                const jid = mem.jid || mem.pn || mem.id;
+                const jid = mem.id || mem.lid || mem.phoneNumber || mem.pn || mem.jid;
                 teks += `${i + 1}. @${jid.split("@")[0]}\n`;
             });
 
@@ -1611,7 +1631,7 @@ cmd(
                 from,
                 {
                     text: teks,
-                    mentions: participants.map((p) => p.jid || p.pn || p.id),
+                    mentions: participants.map((p) => p.id || p.lid || p.phoneNumber || p.pn || p.jid),
                 },
                 { quoted: mek },
             );
@@ -2117,7 +2137,7 @@ cmd(
                     const batch = participants.slice(i, i + batchSize);
                     await Promise.all(
                         batch.map(async (p) => {
-                            const jid = p.id || p.jid;
+                            const jid = p.id || p.lid || p.jid;
                             try {
                                 await conn.presenceSubscribe(jid);
                             } catch (e) {}
@@ -2129,17 +2149,18 @@ cmd(
                 await sleep(2000);
 
                 for (const p of participants) {
-                    const participantId = p.id || p.jid;
+                    const participantId = p.id || p.lid || p.jid;
                     const numOnly = participantId.split("@")[0];
 
                     let presence =
                         presenceData.get(participantId) ||
                         presenceData.get(numOnly);
 
-                    if (!presence && p.pn) {
+                    const phoneNumber = p.phoneNumber || p.pn;
+                    if (!presence && phoneNumber) {
                         presence =
-                            presenceData.get(p.pn) ||
-                            presenceData.get(p.pn.split("@")[0]);
+                            presenceData.get(phoneNumber) ||
+                            presenceData.get(phoneNumber.split("@")[0]);
                     }
 
                     if (
@@ -2147,9 +2168,6 @@ cmd(
                         presence?.lastKnownPresence === "composing"
                     ) {
                         let displayJid = participantId;
-                        if (participantId.endsWith("@lid") && p.pn) {
-                            displayJid = p.pn;
-                        }
                         const number = displayJid.split("@")[0];
                         const name = p.notify || p.name || number;
                         onlineMembers.push({ jid: displayJid, name, number });
@@ -2440,7 +2458,8 @@ cmd(
             for (let i = 0; i < pending.length; i++) {
                 const participant = pending[i];
                 try {
-                    await conn.groupRequestParticipantsUpdate(from, [participant.jid], "approve");
+                    const participantJid = participant.id || participant.jid;
+                    await conn.groupRequestParticipantsUpdate(from, [participantJid], "approve");
                     approved++;
 
                     const delayTime = rateLimitHit ? 3000 : 1500;
@@ -2454,7 +2473,7 @@ cmd(
                         i--;
                     } else {
                         failed++;
-                        console.error(`Failed to approve: ${participant.jid}`, err);
+                        console.error(`Failed to approve: ${participant.id || participant.jid}`, err);
                         await new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }

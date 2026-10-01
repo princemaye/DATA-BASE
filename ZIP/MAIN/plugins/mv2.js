@@ -1,9 +1,19 @@
-const axios = require("axios");
-const https = require("https");
-const config = require("../config");
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "axios";
+import __import1 from "https";
+import __import2 from "../config.js";
+import __import3 from "../command.js";
+import __import4 from "../lib/functions.js";
+import __import5 from "../lib/movie_db.js";
+import __import6 from "../lib/numreply-db.js";
+import __import7 from "../lib/config.js";
+const axios = __import0;
+const https = __import1;
+const config = __import2;
 
-const { cmd } = require("../command");
-const { fetchJson, resizeThumbnail } = require("../lib/functions");
+const { cmd } = __import3;
+const { fetchJson, resizeThumbnail } = __import4;
 
 // CDN images may use mismatched TLS certs — bypass verification
 const tlsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -21,9 +31,9 @@ async function safeImageBuffer(url) {
     }
 }
 
-const { inputMovie, getMovie, resetMovie } = require("../lib/movie_db");
-const { storenumrepdata } = require("../lib/numreply-db");
-const dbData = require("../lib/config");
+const { inputMovie, getMovie, resetMovie } = __import5;
+const { storenumrepdata } = __import6;
+const dbData = __import7;
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 const SILENT_API = "https://princce-movvie-aapi.vercel.app";

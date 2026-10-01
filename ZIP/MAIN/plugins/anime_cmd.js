@@ -1,13 +1,19 @@
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __filename = __fileURLToPath(import.meta.url);
+import __import0 from "../command.js";
+import __import1 from "../config.js";
+import __import2 from "../lib/functions.js";
+import __import3 from "../lib/language.json" with { type: 'json' };
 // ============================= ANIME PLUGIN =============================
-const { cmd } = require("../command");
-const config = require("../config");
-const {fetchJson} = require("../lib/functions");
+const { cmd } = __import0;
+const config = __import1;
+const {fetchJson} = __import2;
 
 const PRINCE_API_KEY = "prince_api_56yjJ568dte4";
 const PRINCE_API_BASE = "https://api.princetechn.com/api/anime";
 
 // ============================= L A N G U A G E =============================
-var allLangs = require("../lib/language.json");
+var allLangs = __import3;
 var LANG = config.LANG === 'EN' ? 'EN' 
          : config.LANG === 'FR' ? 'FR' 
          : 'EN';

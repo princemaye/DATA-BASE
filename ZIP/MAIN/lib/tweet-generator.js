@@ -1,3 +1,9 @@
+import __import0 from "sharp";
+import __import1 from "fs";
+import __import2 from "path";
+import { dirname as __pathDirname } from "node:path";
+import { fileURLToPath as __fileURLToPath } from "node:url";
+const __dirname = __pathDirname(__fileURLToPath(import.meta.url));
 /**
  * tweet-generator.js
  * Generates a fake Twitter/X tweet image matching zeoob.com's dark-theme output.
@@ -6,9 +12,9 @@
 
 'use strict';
 
-const sharp = require('sharp');
-const fs    = require('fs');
-const path  = require('path');
+const sharp = __import0;
+const fs    = __import1;
+const path  = __import2;
 
 // ─── Assets (scraped from zeoob.com/assets/img/) ────────────────────────────
 const ASSET_DIR = path.join(__dirname, 'tweet-assets');
@@ -313,4 +319,4 @@ function fmtCount(n) {
     return String(n);
 }
 
-module.exports = { generateTweetImage, formatDate, fmtCount };
+export default { generateTweetImage, formatDate, fmtCount };

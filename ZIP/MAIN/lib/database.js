@@ -1,5 +1,7 @@
-const { MongoClient, ObjectId } = require("mongodb");
-const config = require("../config");
+import * as __import0 from "mongodb";
+import __import1 from "../config.js";
+const { MongoClient, ObjectId } = __import0;
+const config = __import1;
 const dbName = "config_db";
 let db;
 
@@ -64,7 +66,7 @@ let inputConfig = {
   }
 };
 
-module.exports = class DBM {
+export default class DBM {
   constructor() {}
 
   async connect(client) {

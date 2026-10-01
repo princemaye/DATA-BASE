@@ -1,4 +1,5 @@
-const { MongoClient } = require("mongodb");
+import * as __import0 from "mongodb";
+const { MongoClient } = __import0;
 const dbName = "autoReplies";
 let client = null
 
@@ -141,7 +142,7 @@ async function findReplies(replycollectionName, trigger) {
 }
 
 
-module.exports = {  
+export default {  
                    saveAutoReply, 
                    deleteAutoReply, 
                    updateAutoReply, 
