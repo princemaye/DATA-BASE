@@ -1,14 +1,14 @@
 import { fileURLToPath as __fileURLToPath } from "node:url";
 const __filename = __fileURLToPath(import.meta.url);
 import __import0 from "../command.js";
-import __import1 from "../config.js";
+import * as configModule from "../config.js";
 import __import2 from "../lib/functions.js";
 import __import3 from "../lib/fonts.js";
 import __import4 from "../lib/numreply-db.js";
 import __import5 from "../lib/language.json" with { type: 'json' };
 // ============================= SPORTS PLUGIN =============================
 const { cmd } = __import0;
-const config = __import1;
+const config = configModule.default ?? configModule.config ?? configModule;
 const { fetchJson } = __import2;
 
 const { toBold, toSmallCaps } = __import3;
