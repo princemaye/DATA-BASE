@@ -162,67 +162,120 @@ const CDN_HEADERS = {
         "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36",
 };
 
-// Download one URL to `dest`, resuming (Range) if the connection drops mid-way.
-// Hard refusals (403/404/429, wrong size) are NOT retried — we move to the next source.
-async function downloadWithResume(url, headers, dest, expectedSize) {
-    let lastErr;
-    for (let attempt = 0; attempt < 4; attempt++) {
+const CHUNK = 8 * 1024 * 1024; // 8 MB per request: short enough to beat server time limits
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
+// Download `url` to `dest` in ranged pieces, appending to the file.
+// - If the server honours Range (206): each piece is its own short request,
+//   and any dropped piece is simply re-requested from the current file size.
+// - If it ignores Range (200): fall back to streaming the whole file.
+// - 4xx (403/404/429…) and wrong-size files are NOT retried (err.fatal).
+async function downloadWithResume(url, headers, dest, expectedSize, name = "src") {
+    let total = 0; // full size once the server tells us
+    let failures = 0;
+    let logged = false;
+
+    for (;;) {
+        const have = fs.existsSync(dest) ? fs.statSync(dest).size : 0;
+        const target = total || expectedSize;
+        if (target && have >= target) return;
+
+        let r;
         try {
-            const have = fs.existsSync(dest) ? fs.statSync(dest).size : 0;
-            if (expectedSize && have >= expectedSize * 0.99) return;
-
-            const h = { ...headers };
-            if (have > 0) h.Range = `bytes=${have}-`;
-
-            const r = await axios.get(url, {
+            r = await axios.get(url, {
                 httpsAgent: tlsAgent,
-                headers: h,
+                headers: { ...headers, Range: `bytes=${have}-${have + CHUNK - 1}` },
                 responseType: "stream",
                 timeout: 30000, // idle timeout
                 maxRedirects: 5,
                 validateStatus: () => true,
             });
+        } catch (e) {
+            if (++failures >= 5) throw e;
+            await sleep(2000);
+            continue;
+        }
 
-            if (r.status !== 200 && r.status !== 206) {
-                r.data?.destroy?.();
-                const err = new Error(`HTTP ${r.status}`);
-                // 4xx = refused (hotlink / rate-limit / bad link): don't hammer it
-                err.fatal = r.status >= 400 && r.status < 500 && r.status !== 408;
-                throw err;
-            }
+        if (!logged) {
+            logged = true;
+            console.log(
+                `[movie] ${name}: HTTP ${r.status} | length=${r.headers["content-length"] || "-"} | range=${r.headers["content-range"] || "-"} | accept-ranges=${r.headers["accept-ranges"] || "-"}`,
+            );
+        }
 
-            // Reject a source that serves a different quality than the one picked
-            const cl = parseInt(r.headers["content-length"]) || 0;
-            if (have === 0 && r.status === 200 && cl && expectedSize) {
-                const ratio = cl / expectedSize;
+        if (r.status === 416) {
+            r.data?.destroy?.();
+            if (have > 0) return; // asked past the end → we already have it all
+            const err = new Error("HTTP 416");
+            err.fatal = true;
+            throw err;
+        }
+
+        if (r.status !== 200 && r.status !== 206) {
+            r.data?.destroy?.();
+            const err = new Error(`HTTP ${r.status}`);
+            err.fatal = r.status >= 400 && r.status < 500 && r.status !== 408;
+            if (err.fatal || ++failures >= 5) throw err;
+            await sleep(2000);
+            continue;
+        }
+
+        // ── 206: ranged piece ──
+        if (r.status === 206) {
+            const m = /\/(\d+)\s*$/.exec(r.headers["content-range"] || "");
+            if (m) total = parseInt(m[1]);
+
+            if (have === 0 && total && expectedSize) {
+                const ratio = total / expectedSize;
                 if (ratio < 0.9 || ratio > 1.1) {
                     r.data?.destroy?.();
                     const err = new Error(
-                        `size mismatch (got ${cl}, expected ${expectedSize})`,
+                        `size mismatch (got ${total}, expected ${expectedSize})`,
                     );
                     err.fatal = true;
                     throw err;
                 }
             }
 
-            // 206 = resumed, 200 = server ignored Range → start over
-            const append = have > 0 && r.status === 206;
-            await pipeline(
-                r.data,
-                fs.createWriteStream(dest, { flags: append ? "a" : "w" }),
-            );
+            try {
+                await pipeline(r.data, fs.createWriteStream(dest, { flags: "a" }));
+                failures = 0;
+            } catch (e) {
+                console.error(
+                    `[movie] ${name}: piece failed at ${fs.statSync(dest).size} bytes → ${e.message}`,
+                );
+                if (++failures >= 5) throw e;
+                await sleep(2000);
+                continue;
+            }
 
-            const size = fs.statSync(dest).size;
-            if (expectedSize && size < expectedSize * 0.99)
-                throw new Error(`incomplete (${size}/${expectedSize})`);
+            // total unknown and we got less than a full piece → that was the end
+            if (!total && fs.statSync(dest).size - have < CHUNK) return;
+            continue;
+        }
+
+        // ── 200: server ignores Range → whole file in a single stream ──
+        const cl = parseInt(r.headers["content-length"]) || 0;
+        if (cl && expectedSize) {
+            const ratio = cl / expectedSize;
+            if (ratio < 0.9 || ratio > 1.1) {
+                r.data?.destroy?.();
+                const err = new Error(`size mismatch (got ${cl}, expected ${expectedSize})`);
+                err.fatal = true;
+                throw err;
+            }
+        }
+        try {
+            await pipeline(r.data, fs.createWriteStream(dest, { flags: "w" }));
             return;
         } catch (e) {
-            lastErr = e;
-            if (e.fatal) break;
-            await new Promise((res) => setTimeout(res, 2000));
+            console.error(
+                `[movie] ${name}: full-stream failed at ${fs.existsSync(dest) ? fs.statSync(dest).size : 0} bytes → ${e.message} (no Range support)`,
+            );
+            if (++failures >= 2) throw e;
+            await sleep(2000);
         }
     }
-    throw lastErr || new Error("download failed");
 }
 
 // Download a stream to a temp file, trying each source until one completes.
@@ -246,7 +299,10 @@ async function downloadStreamToTemp({ stream, subjectId, se, ep, quality }) {
     let lastErr;
     for (const [name, u, h] of candidates) {
         try {
-            await downloadWithResume(u, h, dest, expected);
+            await downloadWithResume(u, h, dest, expected, name);
+            const got = fs.statSync(dest).size;
+            if (expected && got < expected * 0.99)
+                throw new Error(`incomplete (${got}/${expected})`);
             console.log(`[movie] downloaded via ${name}`);
             return dest;
         } catch (e) {
