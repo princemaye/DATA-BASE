@@ -152,25 +152,39 @@ async function fetchMovieStreams(subjectId) {
     return { streams: [], se: 1, ep: 1 };
 }
 
-async function urlWorks(url) {
+const CDN_HEADERS = {
+    Referer: "https://h5.aoneroom.com/",
+    "User-Agent":
+        "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36",
+};
+
+// Real GET probe (1 byte). HEAD is not reliable: some CDNs allow it but block GET.
+async function urlWorks(url, headers = {}) {
     try {
-        const r = await axios.head(url, {
+        const r = await axios.get(url, {
             httpsAgent: tlsAgent,
-            timeout: 10000,
+            headers: { ...headers, Range: "bytes=0-0" },
+            responseType: "stream",
+            timeout: 12000,
             maxRedirects: 5,
             validateStatus: () => true,
         });
-        return r.status < 400 || r.status === 405 || r.status === 501;
+        r.data?.destroy?.();
+        return r.status === 200 || r.status === 206;
     } catch (_) {
         return false;
     }
 }
 
-// Prefer the direct CDN link (no load on the API server); fall back to the proxy link
-async function pickDownloadUrl(stream) {
-    const candidates = [stream.url, stream.downloadUrl].filter(Boolean);
-    for (const u of candidates) if (await urlWorks(u)) return u;
-    return candidates[0];
+// Returns { url } for WhatsApp to fetch itself, or { url, headers } when the
+// CDN needs a Referer — then the bot streams the file itself.
+async function pickDownloadSource(stream) {
+    if (stream.downloadUrl && (await urlWorks(stream.downloadUrl)))
+        return { url: stream.downloadUrl };
+    if (stream.url && (await urlWorks(stream.url))) return { url: stream.url };
+    if (stream.url && (await urlWorks(stream.url, CDN_HEADERS)))
+        return { url: stream.url, headers: CDN_HEADERS };
+    return { url: stream.downloadUrl || stream.url };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -652,7 +666,7 @@ cmd(
             if (!source) return reply("*Invalid download data. ❌*");
 
             // Stream links are signed and expire, so resolve a fresh one right before sending
-            let downloadUrl = source;
+            let dl = { url: source };
             if (!/^https?:\/\//i.test(source)) {
                 const streams = await fetchStreams(
                     source,
@@ -664,7 +678,7 @@ cmd(
                     return reply(
                         "*This quality is no longer available. Please search again. ❌*",
                     );
-                downloadUrl = await pickDownloadUrl(match);
+                dl = await pickDownloadSource(match);
             }
 
             const coverBuf = await safeImageBuffer(cover);
@@ -702,7 +716,18 @@ cmd(
                 (config.CAPTION || config.FOOTER || "");
 
             const docPayload = {
-                document: { url: downloadUrl },
+                document: dl.headers
+                    ? {
+                          stream: (
+                              await axios.get(dl.url, {
+                                  httpsAgent: tlsAgent,
+                                  headers: dl.headers,
+                                  responseType: "stream",
+                                  timeout: 30000,
+                              })
+                          ).data,
+                      }
+                    : { url: dl.url },
                 fileName,
                 mimetype: "video/mp4",
                 caption,
