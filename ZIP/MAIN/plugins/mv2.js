@@ -162,6 +162,7 @@ const CDN_HEADERS = {
         "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36",
 };
 
+const BROWSER_HEADERS = { "User-Agent": CDN_HEADERS["User-Agent"] };
 const MAX_CHUNK = 8 * 1024 * 1024; // piece size when the connection is healthy
 const MIN_CHUNK = 512 * 1024; // smallest piece after repeated drops
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
@@ -191,6 +192,7 @@ async function peekBody(r, max = 300) {
 async function downloadWithResume(url, headers, dest, expectedSize, name = "src") {
     let total = 0; // full size once the server tells us
     let failures = 0; // consecutive attempts that made NO progress
+    let slowStrikes = 0; // consecutive pieces aborted for being too slow
     let attempts = 0;
     let chunk = MAX_CHUNK; // shrinks after a drop, grows back after a success
     let logged = false;
@@ -206,7 +208,10 @@ async function downloadWithResume(url, headers, dest, expectedSize, name = "src"
         try {
             r = await axios.get(url, {
                 httpsAgent: tlsAgent,
-                headers: { ...headers, Range: `bytes=${have}-${have + reqChunk - 1}` },
+                headers:
+                    have > 0
+                        ? { ...headers, Range: `bytes=${have}-${have + reqChunk - 1}` }
+                        : { ...headers }, // first request: plain GET, like a browser
                 responseType: "stream",
                 timeout: 30000, // idle timeout
                 maxRedirects: 5,
@@ -263,21 +268,38 @@ async function downloadWithResume(url, headers, dest, expectedSize, name = "src"
             }
 
             const t0 = Date.now();
+            let got = 0;
+            r.data.on("data", (c) => (got += c.length));
+            // Stall guard: a source crawling below ~20 KB/s is useless — abort the piece
+            const guard = setInterval(() => {
+                const sec = (Date.now() - t0) / 1000;
+                if (sec >= 15 && got / sec < 20 * 1024)
+                    r.data.destroy(new Error("stalled"));
+            }, 3000);
             try {
                 await pipeline(r.data, fs.createWriteStream(dest, { flags: "a" }));
                 failures = 0;
+                slowStrikes = 0;
                 chunk = Math.min(chunk * 2, MAX_CHUNK);
             } catch (e) {
                 const now = fs.statSync(dest).size;
+                const sec = Math.max((Date.now() - t0) / 1000, 0.1);
                 console.error(
-                    `[movie] ${name}: piece dropped after ${now - have} bytes / ${Date.now() - t0}ms (piece=${reqChunk}, total ${now}/${total || "?"}) → ${e.message}`,
+                    `[movie] ${name}: piece dropped after ${now - have} bytes / ${Math.round(sec)}s = ${(got / sec / 1024).toFixed(1)} KB/s (piece=${reqChunk}, total ${now}/${total || "?"}) → ${e.message}`,
                 );
+                if (e.message === "stalled" && ++slowStrikes >= 2) {
+                    const err = new Error("source too slow");
+                    err.fatal = true;
+                    throw err;
+                }
                 // keep partial bytes; only count it as a failure if nothing arrived
                 failures = now > have ? 0 : failures + 1;
                 chunk = Math.max(Math.floor(chunk / 2), MIN_CHUNK);
                 if (failures >= 4) throw e;
                 await sleep(1500);
                 continue;
+            } finally {
+                clearInterval(guard);
             }
 
             // total unknown and we got less than a full piece → that was the end
@@ -285,7 +307,7 @@ async function downloadWithResume(url, headers, dest, expectedSize, name = "src"
             continue;
         }
 
-        // ── 200: server ignores Range → whole file in a single stream ──
+        // ── 200: whole file in one plain stream (what a browser does) ──
         const cl = parseInt(r.headers["content-length"]) || 0;
         if (cl && expectedSize) {
             const ratio = cl / expectedSize;
@@ -296,15 +318,39 @@ async function downloadWithResume(url, headers, dest, expectedSize, name = "src"
                 throw err;
             }
         }
+        if (cl && !total) total = cl;
+
+        const t0 = Date.now();
+        let got = 0;
+        r.data.on("data", (c) => (got += c.length));
+        const guard = setInterval(() => {
+            const sec = (Date.now() - t0) / 1000;
+            if (sec >= 15 && got / sec < 20 * 1024)
+                r.data.destroy(new Error("stalled"));
+        }, 3000);
         try {
             await pipeline(r.data, fs.createWriteStream(dest, { flags: "w" }));
+            console.log(
+                `[movie] ${name}: full stream done, ${(got / 1048576).toFixed(1)} MB in ${Math.round((Date.now() - t0) / 1000)}s`,
+            );
             return;
         } catch (e) {
+            const now = fs.existsSync(dest) ? fs.statSync(dest).size : 0;
+            const sec = Math.max((Date.now() - t0) / 1000, 0.1);
             console.error(
-                `[movie] ${name}: full-stream failed at ${fs.existsSync(dest) ? fs.statSync(dest).size : 0} bytes → ${e.message} (no Range support)`,
+                `[movie] ${name}: stream dropped at ${now} bytes / ${Math.round(sec)}s = ${(got / sec / 1024).toFixed(1)} KB/s → ${e.message} (will resume with Range)`,
             );
-            if (++failures >= 2) throw e;
-            await sleep(2000);
+            if (e.message === "stalled" && ++slowStrikes >= 2) {
+                const err = new Error("source too slow");
+                err.fatal = true;
+                throw err;
+            }
+            // next loop sends Range from the bytes we already have
+            failures = now > have ? 0 : failures + 1;
+            if (failures >= 4) throw e;
+            await sleep(1500);
+        } finally {
+            clearInterval(guard);
         }
     }
 }
@@ -322,8 +368,8 @@ async function downloadStreamToTemp({ stream, subjectId, se, ep, quality }) {
         `&quality=${encodeURIComponent(quality)}`;
 
     const candidates = [
-        ["proxyDownload", proxyById, {}],
-        ["sources.downloadUrl", stream.downloadUrl, {}],
+        ["proxyDownload", proxyById, BROWSER_HEADERS],
+        ["sources.downloadUrl", stream.downloadUrl, BROWSER_HEADERS],
         ["direct-cdn", stream.url, CDN_HEADERS],
     ].filter(([, u]) => u);
 
