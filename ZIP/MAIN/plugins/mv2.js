@@ -2,7 +2,7 @@ import { fileURLToPath as __fileURLToPath } from "node:url";
 const __filename = __fileURLToPath(import.meta.url);
 import __import0 from "axios";
 import __import1 from "https";
-import __import2 from "../config.js";
+import * as configModule from "../config.js";
 import __import3 from "../command.js";
 import __import4 from "../lib/functions.js";
 import __import5 from "../lib/movie_db.js";
@@ -14,7 +14,7 @@ import path from "node:path";
 import { pipeline } from "node:stream/promises";
 const axios = __import0;
 const https = __import1;
-const config = __import2;
+const config = configModule.default ?? configModule.config ?? configModule;
 
 const { cmd } = __import3;
 const { fetchJson, resizeThumbnail } = __import4;
@@ -163,12 +163,13 @@ const CDN_HEADERS = {
 };
 
 // Download one URL to `dest`, resuming (Range) if the connection drops mid-way.
+// Hard refusals (403/404/429, wrong size) are NOT retried — we move to the next source.
 async function downloadWithResume(url, headers, dest, expectedSize) {
     let lastErr;
-    for (let attempt = 0; attempt < 5; attempt++) {
+    for (let attempt = 0; attempt < 4; attempt++) {
         try {
             const have = fs.existsSync(dest) ? fs.statSync(dest).size : 0;
-            if (expectedSize && have >= expectedSize) return;
+            if (expectedSize && have >= expectedSize * 0.99) return;
 
             const h = { ...headers };
             if (have > 0) h.Range = `bytes=${have}-`;
@@ -181,9 +182,27 @@ async function downloadWithResume(url, headers, dest, expectedSize) {
                 maxRedirects: 5,
                 validateStatus: () => true,
             });
+
             if (r.status !== 200 && r.status !== 206) {
                 r.data?.destroy?.();
-                throw new Error(`HTTP ${r.status}`);
+                const err = new Error(`HTTP ${r.status}`);
+                // 4xx = refused (hotlink / rate-limit / bad link): don't hammer it
+                err.fatal = r.status >= 400 && r.status < 500 && r.status !== 408;
+                throw err;
+            }
+
+            // Reject a source that serves a different quality than the one picked
+            const cl = parseInt(r.headers["content-length"]) || 0;
+            if (have === 0 && r.status === 200 && cl && expectedSize) {
+                const ratio = cl / expectedSize;
+                if (ratio < 0.9 || ratio > 1.1) {
+                    r.data?.destroy?.();
+                    const err = new Error(
+                        `size mismatch (got ${cl}, expected ${expectedSize})`,
+                    );
+                    err.fatal = true;
+                    throw err;
+                }
             }
 
             // 206 = resumed, 200 = server ignored Range → start over
@@ -199,34 +218,40 @@ async function downloadWithResume(url, headers, dest, expectedSize) {
             return;
         } catch (e) {
             lastErr = e;
-            await new Promise((res) => setTimeout(res, 1500));
+            if (e.fatal) break;
+            await new Promise((res) => setTimeout(res, 2000));
         }
     }
     throw lastErr || new Error("download failed");
 }
 
 // Download a stream to a temp file, trying each source until one completes.
-// Order: direct CDN (with Referer) → proxy link → direct CDN (plain)
-async function downloadStreamToTemp(stream, fileName) {
+// Order: proxyDownload (by id) → proxy link from sources → direct CDN (Referer)
+async function downloadStreamToTemp({ stream, subjectId, se, ep, quality }) {
     const dest = path.join(
         os.tmpdir(),
         `mv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp4`,
     );
     const expected = parseInt(stream.size) || 0;
+    const proxyById =
+        `${STREAM_API}/download?id=${subjectId}&se=${se}&ep=${ep}` +
+        `&quality=${encodeURIComponent(quality)}`;
+
     const candidates = [
-        [stream.url, CDN_HEADERS],
-        [stream.downloadUrl, {}],
-        [stream.url, {}],
-    ].filter(([u]) => u);
+        ["proxyDownload", proxyById, {}],
+        ["sources.downloadUrl", stream.downloadUrl, {}],
+        ["direct-cdn", stream.url, CDN_HEADERS],
+    ].filter(([, u]) => u);
 
     let lastErr;
-    for (const [u, h] of candidates) {
+    for (const [name, u, h] of candidates) {
         try {
             await downloadWithResume(u, h, dest, expected);
+            console.log(`[movie] downloaded via ${name}`);
             return dest;
         } catch (e) {
             lastErr = e;
-            console.error("[movie] source failed:", u.slice(0, 80), e.message);
+            console.error(`[movie] source failed: ${name} → ${e.message}`);
             fs.promises.unlink(dest).catch(() => {});
         }
     }
@@ -766,7 +791,13 @@ cmd(
             try {
                 // Download to disk first (resumable) so a dropped connection
                 // can't kill the WhatsApp upload mid-way
-                if (match) tmpFile = await downloadStreamToTemp(match, fileName);
+                if (match) tmpFile = await downloadStreamToTemp({
+                        stream: match,
+                        subjectId: source,
+                        se: Number.isFinite(se) ? se : 1,
+                        ep: Number.isFinite(ep) ? ep : 1,
+                        quality,
+                    });
 
                 const docPayload = {
                     document: { url: tmpFile || source },
