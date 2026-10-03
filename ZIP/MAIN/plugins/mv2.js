@@ -8,6 +8,10 @@ import __import4 from "../lib/functions.js";
 import __import5 from "../lib/movie_db.js";
 import __import6 from "../lib/numreply-db.js";
 import __import7 from "../lib/config.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { pipeline } from "node:stream/promises";
 const axios = __import0;
 const https = __import1;
 const config = __import2;
@@ -158,33 +162,77 @@ const CDN_HEADERS = {
         "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36",
 };
 
-// Real GET probe (1 byte). HEAD is not reliable: some CDNs allow it but block GET.
-async function urlWorks(url, headers = {}) {
-    try {
-        const r = await axios.get(url, {
-            httpsAgent: tlsAgent,
-            headers: { ...headers, Range: "bytes=0-0" },
-            responseType: "stream",
-            timeout: 12000,
-            maxRedirects: 5,
-            validateStatus: () => true,
-        });
-        r.data?.destroy?.();
-        return r.status === 200 || r.status === 206;
-    } catch (_) {
-        return false;
+// Download one URL to `dest`, resuming (Range) if the connection drops mid-way.
+async function downloadWithResume(url, headers, dest, expectedSize) {
+    let lastErr;
+    for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+            const have = fs.existsSync(dest) ? fs.statSync(dest).size : 0;
+            if (expectedSize && have >= expectedSize) return;
+
+            const h = { ...headers };
+            if (have > 0) h.Range = `bytes=${have}-`;
+
+            const r = await axios.get(url, {
+                httpsAgent: tlsAgent,
+                headers: h,
+                responseType: "stream",
+                timeout: 30000, // idle timeout
+                maxRedirects: 5,
+                validateStatus: () => true,
+            });
+            if (r.status !== 200 && r.status !== 206) {
+                r.data?.destroy?.();
+                throw new Error(`HTTP ${r.status}`);
+            }
+
+            // 206 = resumed, 200 = server ignored Range → start over
+            const append = have > 0 && r.status === 206;
+            await pipeline(
+                r.data,
+                fs.createWriteStream(dest, { flags: append ? "a" : "w" }),
+            );
+
+            const size = fs.statSync(dest).size;
+            if (expectedSize && size < expectedSize * 0.99)
+                throw new Error(`incomplete (${size}/${expectedSize})`);
+            return;
+        } catch (e) {
+            lastErr = e;
+            await new Promise((res) => setTimeout(res, 1500));
+        }
     }
+    throw lastErr || new Error("download failed");
 }
 
-// Returns { url } for WhatsApp to fetch itself, or { url, headers } when the
-// CDN needs a Referer — then the bot streams the file itself.
-async function pickDownloadSource(stream) {
-    if (stream.downloadUrl && (await urlWorks(stream.downloadUrl)))
-        return { url: stream.downloadUrl };
-    if (stream.url && (await urlWorks(stream.url))) return { url: stream.url };
-    if (stream.url && (await urlWorks(stream.url, CDN_HEADERS)))
-        return { url: stream.url, headers: CDN_HEADERS };
-    return { url: stream.downloadUrl || stream.url };
+// Download a stream to a temp file, trying each source until one completes.
+// Order: direct CDN (with Referer) → proxy link → direct CDN (plain)
+async function downloadStreamToTemp(stream, fileName) {
+    const dest = path.join(
+        os.tmpdir(),
+        `mv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp4`,
+    );
+    const expected = parseInt(stream.size) || 0;
+    const candidates = [
+        [stream.url, CDN_HEADERS],
+        [stream.downloadUrl, {}],
+        [stream.url, {}],
+    ].filter(([u]) => u);
+
+    let lastErr;
+    for (const [u, h] of candidates) {
+        try {
+            await downloadWithResume(u, h, dest, expected);
+            return dest;
+        } catch (e) {
+            lastErr = e;
+            console.error("[movie] source failed:", u.slice(0, 80), e.message);
+            fs.promises.unlink(dest).catch(() => {});
+        }
+    }
+    throw new Error(
+        `*Download failed (${lastErr?.message || "unknown"}). Please try again later. ⛔️*`,
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -666,19 +714,18 @@ cmd(
             if (!source) return reply("*Invalid download data. ❌*");
 
             // Stream links are signed and expire, so resolve a fresh one right before sending
-            let dl = { url: source };
+            let match = null; // resolved stream (null = legacy direct URL)
             if (!/^https?:\/\//i.test(source)) {
                 const streams = await fetchStreams(
                     source,
                     Number.isFinite(se) ? se : 1,
                     Number.isFinite(ep) ? ep : 1,
                 );
-                const match = streams.find((s) => qLabel(s) === quality);
+                match = streams.find((s) => qLabel(s) === quality);
                 if (!match)
                     return reply(
                         "*This quality is no longer available. Please search again. ❌*",
                     );
-                dl = await pickDownloadSource(match);
             }
 
             const coverBuf = await safeImageBuffer(cover);
@@ -715,27 +762,25 @@ cmd(
                 `${pk} ${quality} | ${sizeLabel} ${pk2}\n\n` +
                 (config.CAPTION || config.FOOTER || "");
 
-            const docPayload = {
-                document: dl.headers
-                    ? {
-                          stream: (
-                              await axios.get(dl.url, {
-                                  httpsAgent: tlsAgent,
-                                  headers: dl.headers,
-                                  responseType: "stream",
-                                  timeout: 30000,
-                              })
-                          ).data,
-                      }
-                    : { url: dl.url },
-                fileName,
-                mimetype: "video/mp4",
-                caption,
-            };
+            let tmpFile = null;
+            try {
+                // Download to disk first (resumable) so a dropped connection
+                // can't kill the WhatsApp upload mid-way
+                if (match) tmpFile = await downloadStreamToTemp(match, fileName);
 
-            if (thumbnailBuffer) docPayload.jpegThumbnail = thumbnailBuffer;
+                const docPayload = {
+                    document: { url: tmpFile || source },
+                    fileName,
+                    mimetype: "video/mp4",
+                    caption,
+                };
 
-            await conn.sendMessage(from, docPayload, { quoted: mek });
+                if (thumbnailBuffer) docPayload.jpegThumbnail = thumbnailBuffer;
+
+                await conn.sendMessage(from, docPayload, { quoted: mek });
+            } finally {
+                if (tmpFile) fs.promises.unlink(tmpFile).catch(() => {});
+            }
 
             await conn.sendMessage(from, {
                 text: `*✅ Upload Successful!*\n📌 *${displayTitle}* | 🎯 ${quality}`,
