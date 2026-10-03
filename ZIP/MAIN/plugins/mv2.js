@@ -36,8 +36,10 @@ const { storenumrepdata } = __import6;
 const dbData = __import7;
 
 // ─── API ─────────────────────────────────────────────────────────────────────
-const SILENT_API = "https://princce-movvie-aapi.vercel.app";
-const API_KEY = "api=Mayelprince";
+// Search                 : api.omegatech.app  (MovieBox-pro)
+// Info + stream links    : stream.omegatech.app (v2)
+const SEARCH_API = "https://api.omegatech.app/api/movie/MovieBox-pro";
+const STREAM_API = "https://stream.omegatech.app/api/v2";
 const NEWSLETTER = "120363404978384902@newsletter";
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
@@ -80,12 +82,95 @@ function guardCheck(config, dbData, isDev, isMe, isOwners) {
     return null;
 }
 
-// API now returns all episodes in one call via payload.full_resource_list (no pagination)
-async function fetchAllMediaPages(subjectId) {
+// ─── API helpers ─────────────────────────────────────────────────────────────
+
+// Search → data.results[]  (movies + series that actually have resources)
+async function searchTitles(query) {
     const res = await fetchJson(
-        `${SILENT_API}/api/media?id=${subjectId}&${API_KEY}`,
+        `${SEARCH_API}?action=search&keyword=${encodeURIComponent(query)}`,
     );
-    return res?.payload?.full_resource_list || res?.data?.list || [];
+    return (res?.data?.results || []).filter(
+        (i) =>
+            i.hasResource !== false &&
+            (i.subjectType === 1 || i.subjectType === 2),
+    );
+}
+
+// Info → data.subject / data.isTvShow / data.seasons[]
+async function fetchInfo(subjectId) {
+    try {
+        const res = await fetchJson(`${STREAM_API}/info/${subjectId}`);
+        return res?.data || {};
+    } catch (_) {
+        return {};
+    }
+}
+
+// Seasons that really have episodes → [{ se, epCount }]
+function getSeasons(info) {
+    const a = (info.seasons || [])
+        .map((s) => ({ se: s.season, epCount: s.episodeCount || 0 }))
+        .filter((s) => s.se > 0 && s.epCount > 0);
+    if (a.length) return a.sort((x, y) => x.se - y.se);
+    return (info.resource?.seasons || [])
+        .map((s) => ({ se: s.se, epCount: s.maxEp || 0 }))
+        .filter((s) => s.se > 0 && s.epCount > 0)
+        .sort((x, y) => x.se - y.se);
+}
+
+function qLabel(s) {
+    return s.quality || (s.resolution ? `${s.resolution}p` : "?");
+}
+
+// Sources → streams[] (one per resolution, lowest first).
+// Each stream: { quality, resolution, size, url (direct CDN), downloadUrl (proxy) }
+async function fetchStreams(subjectId, se, ep) {
+    const res = await fetchJson(
+        `${STREAM_API}/sources/${subjectId}?se=${se}&ep=${ep}`,
+    );
+    const byRes = new Map();
+    for (const s of res?.streams || []) {
+        if (!s?.url) continue;
+        const key = parseInt(s.resolution) || parseInt(s.quality) || 0;
+        if (!byRes.has(key)) byRes.set(key, s);
+    }
+    return [...byRes.entries()].sort((a, b) => a[0] - b[0]).map(([, s]) => s);
+}
+
+// Movies have no season/episode. Try the API's default (1/1), then 0/0,
+// and return which pair worked so movie_dl can re-resolve the same one.
+async function fetchMovieStreams(subjectId) {
+    for (const [se, ep] of [
+        [1, 1],
+        [0, 0],
+    ]) {
+        try {
+            const streams = await fetchStreams(subjectId, se, ep);
+            if (streams.length) return { streams, se, ep };
+        } catch (_) {}
+    }
+    return { streams: [], se: 1, ep: 1 };
+}
+
+async function urlWorks(url) {
+    try {
+        const r = await axios.head(url, {
+            httpsAgent: tlsAgent,
+            timeout: 10000,
+            maxRedirects: 5,
+            validateStatus: () => true,
+        });
+        return r.status < 400 || r.status === 405 || r.status === 501;
+    } catch (_) {
+        return false;
+    }
+}
+
+// Prefer the direct CDN link (no load on the API server); fall back to the proxy link
+async function pickDownloadUrl(stream) {
+    const candidates = [stream.url, stream.downloadUrl].filter(Boolean);
+    for (const u of candidates) if (await urlWorks(u)) return u;
+    return candidates[0];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,11 +196,8 @@ cmd(
                     `*Please provide a movie or series name. ❓*\n\n💮 Example: ${prefix}movie Avengers`,
                 );
 
-            const res = await fetchJson(
-                `${SILENT_API}/api/search?q=${encodeURIComponent(q)}&${API_KEY}`,
-            );
-            const items = res?.payload?.items || res?.data?.items;
-            if (!items?.length)
+            const items = await searchTitles(q);
+            if (!items.length)
                 return reply(`*No results found for "${q}". ❌*`);
 
             let movieList = "";
@@ -202,27 +284,21 @@ cmd(
             const releaseDate = parts[5] || "N/A";
             const imdb = parts[6] || "N/A";
 
-            const isTV = subjectType === 2;
-            const typeLabel = isTV ? "📺 Series" : "🎬 Movie";
-
-            // Fetch cover image and details in parallel; media is paginated separately below
-            const [coverBuf, details] = await Promise.all([
+            // Info (description + seasons) and cover image in parallel
+            const [coverBuf, info] = await Promise.all([
                 safeImageBuffer(cover),
-                fetchJson(
-                    `${SILENT_API}/api/item-details?id=${subjectId}&${API_KEY}`,
-                ),
+                fetchInfo(subjectId),
             ]);
+
+            const isTV = info.isTvShow ?? subjectType === 2;
+            const typeLabel = isTV ? "📺 Series" : "🎬 Movie";
 
             const coverMedia = coverBuf
                 ? { image: coverBuf }
                 : { image: { url: config.LOGO } };
 
-            const detPayload = details?.payload || details?.data || {};
-            const desc = detPayload.description || "";
-            const totalSeasons = detPayload.seNum || 0;
-
-            // Paginate through all media pages to discover what's actually available
-            const mediaList = await fetchAllMediaPages(subjectId);
+            const desc = info.subject?.description || "";
+            const seasons = isTV ? getSeasons(info) : [];
 
             const infoCot =
                 `╭──────────────────╮\n` +
@@ -232,43 +308,19 @@ cmd(
                 `  ▫ 📅 Released : ${releaseDate.slice(0, 10)}\n` +
                 `  ▫ 🎀 Genre    : ${genre}\n` +
                 `  ▫ ⭐ IMDB     : ${imdb}\n` +
-                (isTV ? `  ▫ 📺 Seasons  : ${totalSeasons || "N/A"}\n` : "") +
+                (isTV ? `  ▫ 📺 Seasons  : ${seasons.length || "N/A"}\n` : "") +
                 (desc
                     ? `\n📝 _${desc.slice(0, 200)}${desc.length > 200 ? "..." : ""}_\n`
                     : "");
 
-            if (!mediaList.length) {
-                await conn.sendMessage(
-                    from,
-                    {
-                        ...coverMedia,
-                        caption: `${infoCot}\n❌ *No download links found for this title.*\n_The API may not have it yet._\n\n${config.FOOTER}`,
-                    },
-                    { quoted: mek },
-                );
-                return;
-            }
-
             if (isTV) {
-                // ── Series: derive available seasons ONLY from actual media list ──
-                // Only show seasons that truly have downloadable episodes
-                const seasonMap = new Map(); // se → episode count
-                for (const item of mediaList) {
-                    if (!item.se || !item.ep || !item.resourceLink) continue;
-                    if (!seasonMap.has(item.se))
-                        seasonMap.set(item.se, new Set());
-                    seasonMap.get(item.se).add(item.ep);
-                }
-                const availableSeasons = [...seasonMap.entries()].sort(
-                    (a, b) => a[0] - b[0],
-                );
-
-                if (!availableSeasons.length) {
+                // ── Series: seasons come from the info endpoint ──
+                if (!seasons.length) {
                     await conn.sendMessage(
                         from,
                         {
                             ...coverMedia,
-                            caption: `${infoCot}\n❌ *No season data found.*\n\n${config.FOOTER}`,
+                            caption: `${infoCot}\n❌ *No season data found.*\n_The API may not have it yet._\n\n${config.FOOTER}`,
                         },
                         { quoted: mek },
                     );
@@ -278,9 +330,8 @@ cmd(
                 let seasonList = `\n▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃\n📺 *Select Season:*\n\n`;
                 const numrep = [];
 
-                for (const [se, epSet] of availableSeasons) {
+                for (const { se, epCount } of seasons) {
                     const idx = numrep.length + 1;
-                    const epCount = epSet.size;
                     seasonList += `*${formatNumber(idx)} ||* 📁 Season ${se}  •  ${epCount} episode${epCount !== 1 ? "s" : ""}\n`;
 
                     // Pack: subjectId🎈title🎈cover🎈seasonNum
@@ -303,47 +354,42 @@ cmd(
                     method: "nondecimal",
                 });
             } else {
-                // ── Movie: show quality list directly ──
-                // All items have se=0, ep=0; each item is a different quality
-                const qualities = mediaList
-                    .filter((i) => i.resourceLink)
-                    .sort(
-                        (a, b) =>
-                            (parseInt(a.resolution) || 0) -
-                            (parseInt(b.resolution) || 0),
-                    );
+                // ── Movie: fetch stream links and show the quality list ──
+                const { streams, se, ep } = await fetchMovieStreams(subjectId);
 
-                if (!qualities.length) {
+                if (!streams.length) {
                     await conn.sendMessage(
                         from,
                         {
                             ...coverMedia,
-                            caption: `${infoCot}\n❌ *No download links found.*\n\n${config.FOOTER}`,
+                            caption: `${infoCot}\n❌ *No download links found for this title.*\n_The API may not have it yet._\n\n${config.FOOTER}`,
                         },
                         { quoted: mek },
                     );
                     return;
                 }
 
+                const dur = formatDuration(info.subject?.duration);
                 let qualityList = `\n▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃\n📥 *Select Quality:*\n\n`;
                 const numrep = [];
 
-                for (const dl of qualities) {
+                for (const dl of streams) {
                     const idx = numrep.length + 1;
-                    const qualityLabel = `${dl.resolution || "?"}p`;
+                    const qualityLabel = qLabel(dl);
                     const sizeLabel = formatBytes(dl.size);
-                    const dur = formatDuration(dl.duration);
 
-                    qualityList += `*${formatNumber(idx)} ||* 🎯 ${qualityLabel}  •  📦 ${sizeLabel}  •  ⏱ ${dur}\n`;
+                    qualityList += `*${formatNumber(idx)} ||* 🎯 ${qualityLabel}  •  📦 ${sizeLabel}${dur !== "N/A" ? `  •  ⏱ ${dur}` : ""}\n`;
 
-                    // Pack: resourceLink🎈title🎈qualityLabel🎈sizeLabel🎈cover🎈epLabel
+                    // Pack: subjectId🎈title🎈quality🎈size🎈cover🎈epLabel🎈season🎈episode
                     const packed = [
-                        dl.resourceLink,
+                        subjectId,
                         title,
                         qualityLabel,
                         sizeLabel,
                         cover,
                         "",
+                        se,
+                        ep,
                     ].join("🎈");
                     numrep.push(`${prefix}movie_dl ${packed}`);
                 }
@@ -396,25 +442,24 @@ cmd(
             const cover = parts[2] || config.LOGO;
             const seasonNum = parseInt(parts[3]) || 1;
 
-            // Fetch cover and all paginated media in parallel
-            const [coverBuf, mediaList] = await Promise.all([
+            // Fetch cover and series info (season / episode counts)
+            const [coverBuf, info] = await Promise.all([
                 safeImageBuffer(cover),
-                fetchAllMediaPages(subjectId),
+                fetchInfo(subjectId),
             ]);
 
             const coverMedia = coverBuf
                 ? { image: coverBuf }
                 : { image: { url: config.LOGO } };
 
-            // Deduplicate episodes by episode number to get unique episode list
-            const epSet = new Map();
-            for (const item of mediaList) {
-                if (item.se !== seasonNum) continue;
-                if (!epSet.has(item.ep))
-                    epSet.set(item.ep, item.title || `Episode ${item.ep}`);
-            }
-
-            const episodes = [...epSet.entries()].sort((a, b) => a[0] - b[0]);
+            // The API gives an episode COUNT per season (no episode titles)
+            const season = getSeasons(info).find((s) => s.se === seasonNum);
+            const episodes = season
+                ? Array.from({ length: season.epCount }, (_, i) => [
+                      i + 1,
+                      `Episode ${i + 1}`,
+                  ])
+                : [];
 
             if (!episodes.length) {
                 await conn.sendMessage(
@@ -498,27 +543,15 @@ cmd(
 
             const epLabel = `S${seasonNum}E${String(epNum).padStart(2, "0")} — ${epTitle}`;
 
-            // Fetch cover and all paginated media in parallel
-            const [coverBuf, mediaList] = await Promise.all([
+            // Fetch cover and the streams for this exact season + episode
+            const [coverBuf, qualities] = await Promise.all([
                 safeImageBuffer(cover),
-                fetchAllMediaPages(subjectId),
+                fetchStreams(subjectId, seasonNum, epNum),
             ]);
 
             const coverMedia = coverBuf
                 ? { image: coverBuf }
                 : { image: { url: config.LOGO } };
-
-            // Filter to entries for this specific season + episode
-            const qualities = mediaList
-                .filter(
-                    (i) =>
-                        i.se === seasonNum && i.ep === epNum && i.resourceLink,
-                )
-                .sort(
-                    (a, b) =>
-                        (parseInt(a.resolution) || 0) -
-                        (parseInt(b.resolution) || 0),
-                );
 
             if (!qualities.length) {
                 await conn.sendMessage(
@@ -543,19 +576,21 @@ cmd(
 
             for (const dl of qualities) {
                 const idx = numrep.length + 1;
-                const qualityLabel = `${dl.resolution || "?"}p`;
+                const qualityLabel = qLabel(dl);
                 const sizeLabel = formatBytes(dl.size);
-                const dur = formatDuration(dl.duration);
 
-                qualityList += `*${formatNumber(idx)} ||* 🎯 ${qualityLabel}  •  📦 ${sizeLabel}  •  ⏱ ${dur}\n`;
+                qualityList += `*${formatNumber(idx)} ||* 🎯 ${qualityLabel}  •  📦 ${sizeLabel}\n`;
 
+                // Pack: subjectId🎈title🎈quality🎈size🎈cover🎈epLabel🎈season🎈episode
                 const packed = [
-                    dl.resourceLink,
+                    subjectId,
                     title,
                     qualityLabel,
                     sizeLabel,
                     cover,
                     epLabel,
+                    seasonNum,
+                    epNum,
                 ].join("🎈");
                 numrep.push(`${prefix}movie_dl ${packed}`);
             }
@@ -601,18 +636,36 @@ cmd(
 
             if (!q)
                 return reply(
-                    `*Usage: ${prefix}movie_dl <url>🎈<title>🎈<quality>🎈<size>🎈<cover>🎈<epLabel>*`,
+                    `*Usage: ${prefix}movie_dl <subjectId>🎈<title>🎈<quality>🎈<size>🎈<cover>🎈<epLabel>🎈<se>🎈<ep>*`,
                 );
 
             const parts = q.split("🎈");
-            const downloadUrl = parts[0]?.trim() || "";
+            const source = parts[0]?.trim() || ""; // subjectId (new) or direct URL (legacy)
             const title = parts[1]?.trim() || "Unknown";
             const quality = parts[2]?.trim() || "N/A";
             const sizeLabel = parts[3]?.trim() || "N/A";
             const cover = parts[4]?.trim() || config.LOGO;
             const epLabel = parts[5]?.trim() || "";
+            const se = parseInt(parts[6]);
+            const ep = parseInt(parts[7]);
 
-            if (!downloadUrl) return reply("*Invalid download URL. ❌*");
+            if (!source) return reply("*Invalid download data. ❌*");
+
+            // Stream links are signed and expire, so resolve a fresh one right before sending
+            let downloadUrl = source;
+            if (!/^https?:\/\//i.test(source)) {
+                const streams = await fetchStreams(
+                    source,
+                    Number.isFinite(se) ? se : 1,
+                    Number.isFinite(ep) ? ep : 1,
+                );
+                const match = streams.find((s) => qLabel(s) === quality);
+                if (!match)
+                    return reply(
+                        "*This quality is no longer available. Please search again. ❌*",
+                    );
+                downloadUrl = await pickDownloadUrl(match);
+            }
 
             const coverBuf = await safeImageBuffer(cover);
             const coverMedia = coverBuf
