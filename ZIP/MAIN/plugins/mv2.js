@@ -162,8 +162,26 @@ const CDN_HEADERS = {
         "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36",
 };
 
-const CHUNK = 8 * 1024 * 1024; // 8 MB per request: short enough to beat server time limits
+const MAX_CHUNK = 8 * 1024 * 1024; // piece size when the connection is healthy
+const MIN_CHUNK = 512 * 1024; // smallest piece after repeated drops
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
+// Read the first bytes of an error response so we can log WHY it was refused
+async function peekBody(r, max = 300) {
+    try {
+        const chunks = [];
+        let n = 0;
+        for await (const c of r.data) {
+            chunks.push(c);
+            n += c.length;
+            if (n >= max) break;
+        }
+        r.data.destroy?.();
+        return Buffer.concat(chunks).toString("utf8").slice(0, max).replace(/\s+/g, " ");
+    } catch (_) {
+        return "";
+    }
+}
 
 // Download `url` to `dest` in ranged pieces, appending to the file.
 // - If the server honours Range (206): each piece is its own short request,
@@ -172,7 +190,9 @@ const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 // - 4xx (403/404/429…) and wrong-size files are NOT retried (err.fatal).
 async function downloadWithResume(url, headers, dest, expectedSize, name = "src") {
     let total = 0; // full size once the server tells us
-    let failures = 0;
+    let failures = 0; // consecutive attempts that made NO progress
+    let attempts = 0;
+    let chunk = MAX_CHUNK; // shrinks after a drop, grows back after a success
     let logged = false;
 
     for (;;) {
@@ -180,11 +200,13 @@ async function downloadWithResume(url, headers, dest, expectedSize, name = "src"
         const target = total || expectedSize;
         if (target && have >= target) return;
 
+        if (++attempts > 600) throw new Error("too many attempts");
+        const reqChunk = chunk;
         let r;
         try {
             r = await axios.get(url, {
                 httpsAgent: tlsAgent,
-                headers: { ...headers, Range: `bytes=${have}-${have + CHUNK - 1}` },
+                headers: { ...headers, Range: `bytes=${have}-${have + reqChunk - 1}` },
                 responseType: "stream",
                 timeout: 30000, // idle timeout
                 maxRedirects: 5,
@@ -212,7 +234,10 @@ async function downloadWithResume(url, headers, dest, expectedSize, name = "src"
         }
 
         if (r.status !== 200 && r.status !== 206) {
-            r.data?.destroy?.();
+            const body = await peekBody(r);
+            console.error(
+                `[movie] ${name}: HTTP ${r.status} retry-after=${r.headers["retry-after"] || "-"} body="${body}"`,
+            );
             const err = new Error(`HTTP ${r.status}`);
             err.fatal = r.status >= 400 && r.status < 500 && r.status !== 408;
             if (err.fatal || ++failures >= 5) throw err;
@@ -237,20 +262,26 @@ async function downloadWithResume(url, headers, dest, expectedSize, name = "src"
                 }
             }
 
+            const t0 = Date.now();
             try {
                 await pipeline(r.data, fs.createWriteStream(dest, { flags: "a" }));
                 failures = 0;
+                chunk = Math.min(chunk * 2, MAX_CHUNK);
             } catch (e) {
+                const now = fs.statSync(dest).size;
                 console.error(
-                    `[movie] ${name}: piece failed at ${fs.statSync(dest).size} bytes → ${e.message}`,
+                    `[movie] ${name}: piece dropped after ${now - have} bytes / ${Date.now() - t0}ms (piece=${reqChunk}, total ${now}/${total || "?"}) → ${e.message}`,
                 );
-                if (++failures >= 5) throw e;
-                await sleep(2000);
+                // keep partial bytes; only count it as a failure if nothing arrived
+                failures = now > have ? 0 : failures + 1;
+                chunk = Math.max(Math.floor(chunk / 2), MIN_CHUNK);
+                if (failures >= 4) throw e;
+                await sleep(1500);
                 continue;
             }
 
             // total unknown and we got less than a full piece → that was the end
-            if (!total && fs.statSync(dest).size - have < CHUNK) return;
+            if (!total && fs.statSync(dest).size - have < reqChunk) return;
             continue;
         }
 
@@ -311,9 +342,8 @@ async function downloadStreamToTemp({ stream, subjectId, se, ep, quality }) {
             fs.promises.unlink(dest).catch(() => {});
         }
     }
-    throw new Error(
-        `*Download failed (${lastErr?.message || "unknown"}). Please try again later. ⛔️*`,
-    );
+    console.error("[movie] all sources failed, last error:", lastErr?.message);
+    throw new Error("*Download failed. Please try again later. ⛔️*");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
